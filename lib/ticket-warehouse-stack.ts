@@ -6,6 +6,9 @@ import { LambdaFunction } from 'aws-cdk-lib/aws-events-targets';
 import { CfnNamedQuery } from 'aws-cdk-lib/aws-athena';
 import { Construct } from 'constructs';
 
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 export class TicketWarehouseStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
@@ -29,7 +32,9 @@ export class TicketWarehouseStack extends cdk.Stack {
       }),
       handler: 'handler.lambda_handler',
       environment: {
-        'BUCKET_NAME': ticketWarehouseBucket.bucketName
+        'BUCKET_NAME': ticketWarehouseBucket.bucketName,
+        'TICKETSAUCE_CLIENT_ID': process.env.TICKETSAUCE_CLIENT_ID || '',
+        'TICKETSAUCE_CLIENT_SECRET': process.env.TICKETSAUCE_CLIENT_SECRET || ''
       }
     });
 
