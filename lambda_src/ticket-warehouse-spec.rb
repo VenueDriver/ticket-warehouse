@@ -19,6 +19,19 @@ describe TicketWarehouse do
     expect(events).to be_a(Array)
   end
 
+  it 'fetches events for a specific organization' do
+    warehouse = TicketWarehouse.new(
+      client_id:     ENV['TICKETSAUCE_CLIENT_ID'],
+      client_secret: ENV['TICKETSAUCE_CLIENT_SECRET']
+    )
+    warehouse.authenticate!
+    events = warehouse.fetch_events
+    organization_id = events.first['Event']['organization_id']
+    org_events = warehouse.fetch_events(organization_id: organization_id)
+    expect(org_events).to be_a(Array)
+    expect(org_events.first['Event']['organization_id']).to eq(organization_id)
+  end
+
   it 'fetches orders for a given event' do
     warehouse =  TicketWarehouse.new(
       client_id:     ENV['TICKETSAUCE_CLIENT_ID'],
