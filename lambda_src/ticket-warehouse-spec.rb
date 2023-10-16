@@ -18,4 +18,16 @@ describe TicketWarehouse do
     events = warehouse.fetch_events
     expect(events).to be_a(Array)
   end
+
+  it 'fetches orders for a given event' do
+    warehouse =  TicketWarehouse.new(
+      client_id:     ENV['TICKETSAUCE_CLIENT_ID'],
+      client_secret: ENV['TICKETSAUCE_CLIENT_SECRET'])
+    warehouse.authenticate!
+    events = warehouse.fetch_events
+    event = events.first
+    orders = warehouse.fetch_orders(event: event)
+    expect(orders).to be_a(Array)
+    require 'pry'; binding.pry
+  end
 end
