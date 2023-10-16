@@ -26,9 +26,9 @@ class TicketWarehouse
   end
 
   def fetch_events(organization_id: nil)
-    params = { Authorization: "Bearer #{@access_token}" }
-    params[:organization_id] = organization_id if organization_id
-    response = RestClient.get('https://api.ticketsauce.com/v2/events', params)
+    url = 'https://api.ticketsauce.com/v2/events'
+    url += "?organization_id=#{organization_id}" if organization_id
+    response = RestClient.get(url, { Authorization: "Bearer #{@access_token}" })
     JSON.parse(response.body)
   end
 

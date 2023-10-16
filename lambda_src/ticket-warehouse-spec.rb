@@ -55,4 +55,13 @@ describe TicketWarehouse do
     order_details = warehouse.fetch_order_details(order: order)
     expect(order_details).to be_a(Hash)  # Assuming order details is a hash
   end
+
+  it "fetches Stephane's test event" do
+    warehouse =  TicketWarehouse.new(
+      client_id:     ENV['TICKETSAUCE_CLIENT_ID'],
+      client_secret: ENV['TICKETSAUCE_CLIENT_SECRET'])
+    warehouse.authenticate!
+    events = warehouse.fetch_events(organization_id:'651ed9a9-61e8-4262-a290-67620ad120f3')
+    expect(events).to be_a(Array)
+  end
 end
