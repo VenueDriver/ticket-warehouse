@@ -64,4 +64,16 @@ describe TicketWarehouse do
     events = warehouse.fetch_events(organization_id:'651ed9a9-61e8-4262-a290-67620ad120f3')
     expect(events).to be_a(Array)
   end
+
+  it 'fetches checkin IDs for a given event' do
+    warehouse = TicketWarehouse.new(
+      client_id:     ENV['TICKETSAUCE_CLIENT_ID'],
+      client_secret: ENV['TICKETSAUCE_CLIENT_SECRET']
+    )
+    warehouse.authenticate!
+    events = warehouse.fetch_events
+    event = events.first
+    checkin_ids = warehouse.fetch_checkin_ids(event: event)
+    expect(checkin_ids).to be_a(Array)  # Assuming checkin_ids is an array
+  end
 end

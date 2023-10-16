@@ -43,4 +43,10 @@ class TicketWarehouse
     response = RestClient.get("https://api.ticketsauce.com/v2/order/#{order_id}", { Authorization: "Bearer #{@access_token}" })
     JSON.parse(response.body)
   end
+
+  def fetch_checkin_ids(event:)
+    event_id = event['Event']['id']
+    response = RestClient.get("https://api.ticketsauce.com/v2/tickets/checkin_ids/#{event_id}", { Authorization: "Bearer #{@access_token}" })
+    JSON.parse(response.body)
+  end
 end
