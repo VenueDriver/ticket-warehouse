@@ -1,6 +1,6 @@
 source 'https://rubygems.org'
 
-ruby '3.2.0' # Ensure this matches the version you plan to use
+# ruby '3.2.0' # Ensure this matches the version you plan to use
 
 # Uncomment the next line if you intend to use AWS SDK functionalities
 # gem 'aws-sdk'

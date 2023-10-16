@@ -1,23 +1,24 @@
-import * as cdk from '@aws-cdk/core';
-import * as s3 from '@aws-cdk/aws-s3';
-import * as lambda from '@aws-cdk/aws-lambda';
-import * as events from '@aws-cdk/aws-events';
-import * as targets from '@aws-cdk/aws-events-targets';
-import * as athena from '@aws-cdk/aws-athena';
+import * as cdk from 'aws-cdk-lib';
+import { Bucket } from 'aws-cdk-lib/aws-s3';
+import { Function, Runtime, Code } from 'aws-cdk-lib/aws-lambda';
+import { Rule, Schedule } from 'aws-cdk-lib/aws-events';
+import { LambdaFunction } from 'aws-cdk-lib/aws-events-targets';
+import { CfnNamedQuery } from 'aws-cdk-lib/aws-athena';
+import { Construct } from 'constructs';
 
 export class TicketWarehouseStack extends cdk.Stack {
-  constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
+  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
     // 1. Create the S3 bucket
-    const ticketWarehouseBucket = new s3.Bucket(this, 'TicketWarehouseBucket');
+    const ticketWarehouseBucket = new Bucket(this, 'TicketWarehouseBucket');
 
     // 2. Create a Ruby 3.2 Lambda function
-    const ticketLambda = new lambda.Function(this, 'TicketLambdaFunction', {
-      runtime: lambda.Runtime.RUBY_3_2,
-      code: lambda.Code.fromAsset('lambda_src', {
+    const ticketLambda = new Function(this, 'TicketLambdaFunction', {
+      runtime: Runtime.RUBY_3_2,
+      code: Code.fromAsset('lambda_src', {
         bundling: {
-          image: lambda.Runtime.RUBY_3_2.bundlingImage,
+          image: Runtime.RUBY_3_2.bundlingImage,
           command: [
             'bash', '-c', [
               'bundle install --path /asset-output/vendor/bundle',
@@ -26,20 +27,20 @@ export class TicketWarehouseStack extends cdk.Stack {
           ],
         }
       }),
-      handler: 'handler.lambda_handler'
+      handler: 'handler.lambda_handler',
       environment: {
-          'BUCKET_NAME': ticketWarehouseBucket.bucketName
-        }
+        'BUCKET_NAME': ticketWarehouseBucket.bucketName
+      }
     });
 
     // 3. Set up EventBridge to trigger the Lambda function every 15 minutes
-    const rule = new events.Rule(this, 'Rule', {
-      schedule: events.Schedule.rate(cdk.Duration.minutes(15))
+    const rule = new Rule(this, 'Rule', {
+      schedule: Schedule.rate(cdk.Duration.minutes(15))
     });
-    rule.addTarget(new targets.LambdaFunction(ticketLambda));
+    rule.addTarget(new LambdaFunction(ticketLambda));
 
     // 4. Create an AWS Athena table definition
-    new athena.CfnNamedQuery(this, 'AthenaTicketQuery', {
+    new CfnNamedQuery(this, 'AthenaTicketQuery', {
       database: 'your_database_name',  // Change to your Athena database name
       queryString: `
         CREATE EXTERNAL TABLE IF NOT EXISTS ticket_table (

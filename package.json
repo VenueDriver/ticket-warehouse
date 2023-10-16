@@ -20,12 +20,6 @@
     "typescript": "~5.2.2"
   },
   "dependencies": {
-    "@aws-cdk/aws-athena": "^1.204.0",
-    "@aws-cdk/aws-events": "^1.204.0",
-    "@aws-cdk/aws-events-targets": "^1.204.0",
-    "@aws-cdk/aws-lambda": "^1.204.0",
-    "@aws-cdk/aws-s3": "^1.204.0",
-    "@aws-cdk/core": "^1.204.0",
     "aws-cdk-lib": "2.101.0",
     "constructs": "^10.0.0",
     "source-map-support": "^0.5.21"
