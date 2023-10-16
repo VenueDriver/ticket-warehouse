@@ -29,4 +29,17 @@ describe TicketWarehouse do
     orders = warehouse.fetch_orders(event: event)
     expect(orders).to be_a(Array)
   end
+
+  it 'fetches order details for a given order' do
+    warehouse =  TicketWarehouse.new(
+      client_id:     ENV['TICKETSAUCE_CLIENT_ID'],
+      client_secret: ENV['TICKETSAUCE_CLIENT_SECRET'])
+    warehouse.authenticate!
+    events = warehouse.fetch_events
+    event = events.first
+    orders = warehouse.fetch_orders(event: event)
+    order = orders.first
+    order_details = warehouse.fetch_order_details(order: order)
+    expect(order_details).to be_a(Hash)  # Assuming order details is a hash
+  end
 end
