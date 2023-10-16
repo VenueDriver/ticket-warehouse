@@ -1,5 +1,6 @@
 require 'rest-client'
 require 'json'
+require 'pry'
 
 RestClient.log = STDOUT
 
@@ -23,4 +24,10 @@ class TicketWarehouse
     })
     @access_token = JSON.parse(response.body)['access_token']
   end
+
+  def fetch_events
+    response = RestClient.get('https://api.ticketsauce.com/v2/events', { Authorization: "Bearer #{@access_token}" })
+    JSON.parse(response.body)
+  end
+
 end

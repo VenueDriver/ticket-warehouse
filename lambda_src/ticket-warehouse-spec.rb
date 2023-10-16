@@ -9,4 +9,13 @@ describe TicketWarehouse do
     warehouse.authenticate!
     expect(warehouse.access_token).not_to be_nil
   end
+
+  it 'fetches events' do
+    warehouse =  TicketWarehouse.new(
+      client_id:     ENV['TICKETSAUCE_CLIENT_ID'],
+      client_secret: ENV['TICKETSAUCE_CLIENT_SECRET'])
+    warehouse.authenticate!
+    events = warehouse.fetch_events
+    expect(events).to be_a(Array)
+  end
 end
