@@ -28,6 +28,5 @@ describe TicketWarehouse do
     event = events.first
     orders = warehouse.fetch_orders(event: event)
     expect(orders).to be_a(Array)
-    require 'pry'; binding.pry
   end
 end
