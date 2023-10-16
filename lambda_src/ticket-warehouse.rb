@@ -1,6 +1,11 @@
 require 'rest-client'
 require 'json'
 
+RestClient.log = STDOUT
+
+require 'dotenv'
+Dotenv.load('../.env')
+
 class TicketWarehouse
   attr_reader :access_token
 
