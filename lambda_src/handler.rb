@@ -1,6 +1,8 @@
-# lambda_src/handler.rb
+require 'json'
 
 def lambda_handler(event:, context:)
-  # Your Ruby code here
-  { statusCode: 200, body: JSON.generate('Hello from Ruby Lambda!') }
+  puts "Received event: #{JSON.pretty_generate(event)}"
+  puts "Lambda context: #{JSON.pretty_generate(context)}"
+
+  { statusCode: 200, body: JSON.generate('💪') }
 end

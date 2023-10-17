@@ -5,6 +5,8 @@ import { Rule, Schedule } from 'aws-cdk-lib/aws-events';
 import { LambdaFunction } from 'aws-cdk-lib/aws-events-targets';
 import { CfnNamedQuery } from 'aws-cdk-lib/aws-athena';
 import { Construct } from 'constructs';
+import * as events from 'aws-cdk-lib/aws-events';
+import * as targets from 'aws-cdk-lib/aws-events-targets';
 
 import * as dotenv from 'dotenv';
 dotenv.config();
@@ -39,10 +41,23 @@ export class TicketWarehouseStack extends cdk.Stack {
     });
 
     // 3. Set up EventBridge to trigger the Lambda function every 15 minutes
-    const rule = new Rule(this, 'Rule', {
-      schedule: Schedule.rate(cdk.Duration.minutes(15))
+    const ruleForUpcomingEvents = new events.Rule(this, 'RuleForUpcoming', {
+      schedule: events.Schedule.rate(cdk.Duration.minutes(15))
     });
-    rule.addTarget(new LambdaFunction(ticketLambda));
+    ruleForUpcomingEvents.addTarget(new targets.LambdaFunction(ticketLambda, {
+      event: events.RuleTargetInput.fromObject({
+        timeRange: 'upcoming'
+      })
+    }));
+    
+    const ruleForCurrentEvents = new events.Rule(this, 'RuleForCurrent', {
+      schedule: events.Schedule.rate(cdk.Duration.hours(24))
+    });
+    ruleForCurrentEvents.addTarget(new targets.LambdaFunction(ticketLambda, {
+      event: events.RuleTargetInput.fromObject({
+        timeRange: 'current'
+      })
+    }));
 
     // 4. Create an AWS Athena table definition
     new CfnNamedQuery(this, 'AthenaTicketQuery', {
