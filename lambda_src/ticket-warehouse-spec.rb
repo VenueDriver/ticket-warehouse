@@ -32,6 +32,17 @@ describe TicketWarehouse do
     expect(org_events.first['Event']['organization_id']).to eq(organization_id)
   end
 
+  it 'fetches events starting after a specified date' do
+    warehouse = TicketWarehouse.new(
+      client_id:     ENV['TICKETSAUCE_CLIENT_ID'],
+      client_secret: ENV['TICKETSAUCE_CLIENT_SECRET']
+    )
+    warehouse.authenticate!
+    start_after_date = '2023-01-01'
+    events = warehouse.fetch_events(start_after: start_after_date)
+    expect(events).to be_a(Array)
+  end
+
   it 'fetches orders for a given event' do
     warehouse =  TicketWarehouse.new(
       client_id:     ENV['TICKETSAUCE_CLIENT_ID'],
