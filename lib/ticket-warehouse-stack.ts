@@ -101,7 +101,7 @@ export class TicketWarehouseStack extends cdk.Stack {
       }
     });
 
-    new CfnNamedQuery(this, 'AthenaTicketQuery', {
+    new CfnNamedQuery(this, 'EventsDDLQuery', {
       database: 'ticket_warehouse',
       workGroup: 'TicketWarehouse',
       queryString: `
@@ -171,8 +171,107 @@ export class TicketWarehouseStack extends cdk.Stack {
         OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
         LOCATION 's3://${ticketWarehouseBucket.bucketName}/events/'
       `,
-      name: 'TicketTableDefinition',
+      name: 'EventsTableDefinition',
     });
+
+    new CfnNamedQuery(this, 'OrdersDDLQuery', {
+      database: 'ticket_warehouse',
+      workGroup: 'TicketWarehouse',
+      queryString: `
+        CREATE EXTERNAL TABLE IF NOT EXISTS orders (
+          Order struct<
+            id: string,
+            status: string,
+            last_name: string,
+            first_name: string,
+            dob: string,
+            email: string,
+            phone: string,
+            title: string,
+            company: string,
+            address: string,
+            address2: string,
+            city: string,
+            state: string,
+            postal_code: string,
+            country: string,
+            opted_in: boolean,
+            opted_in_sms: boolean,
+            total_paid: string,
+            refund_amount: string,
+            taxes: string,
+            contributions: string,
+            service_charges: string,
+            ticket_count: string,
+            promo_code_amount: string,
+            promo_code: string,
+            promo_code_id: string,
+            purchase_location: string,
+            paid_date: string,
+            paid_date_utc: string,
+            affiliate_code: string,
+            event_id: string,
+            delivery_method: string
+          >,
+          Ticket array<struct<
+              ticket_type_name: string,
+              ticket_type_id: string,
+              ticket_type_price: string,
+              name: string,
+              price: string,
+              redeemed: boolean,
+              promo_code: string,
+              promo_code_id: string,
+              id: string,
+              int_id: string,
+              ticket_type_price_id: string
+          >>
+        )
+        PARTITIONED BY ( 
+          venue string,
+          year string,
+          month string,
+          day string
+        )
+        ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'
+        STORED AS INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat' 
+        OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
+        LOCATION 's3://${ticketWarehouseBucket.bucketName}/orders/';
+      `,
+      name: 'OrdersTableDefinition',
+    });
+
+    new CfnNamedQuery(this, 'TicketsDDLQuery', {
+      database: 'ticket_warehouse',
+      workGroup: 'TicketWarehouse',
+      queryString: `
+        CREATE EXTERNAL TABLE IF NOT EXISTS tickets (
+          ticket_type_name string,
+          ticket_type_id string,
+          ticket_type_price string,
+          name string,
+          price string,
+          redeemed boolean,
+          promo_code string,
+          promo_code_id string,
+          id string,
+          int_id string,
+          ticket_type_price_id string
+        )
+        PARTITIONED BY ( 
+          venue string,
+          year string,
+          month string,
+          day string
+        )
+        ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'
+        STORED AS INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat' 
+        OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
+        LOCATION 's3://${ticketWarehouseBucket.bucketName}/tickets/';
+      `,
+      name: 'TicketsTableDefinition',
+    });
+    
     
   }
 }

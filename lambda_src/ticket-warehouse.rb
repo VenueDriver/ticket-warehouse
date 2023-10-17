@@ -28,6 +28,11 @@ class TicketWarehouse
     @access_token = JSON.parse(response.body)['access_token']
   end
 
+  class APIError < StandardError
+  end
+  class APINoDataError < StandardError
+  end
+  
   def fetch_events(organization_id: nil, start_before: nil, start_after: nil)
     params = {}
     params[:organization_id] = organization_id if organization_id
@@ -38,13 +43,19 @@ class TicketWarehouse
     
     url = "https://api.ticketsauce.com/v2/events#{query_string}"
     response = RestClient.get(url, { Authorization: "Bearer #{@access_token}" })
-    JSON.parse(response.body)
+    JSON.parse(response.body).tap do |orders|
+      raise APINoDataError.new(orders['error']) if orders.is_a?(Hash) && orders['error'].eql?('no_data')
+      raise APIError.new(orders['error']) if orders.is_a?(Hash) && orders['error']
+    end
   end
 
   def fetch_orders(event:)
     event_id = event['Event']['id']
     response = RestClient.get("https://api.ticketsauce.com/v2/orders/#{event_id}", { Authorization: "Bearer #{@access_token}" })
-    JSON.parse(response.body)
+    JSON.parse(response.body).tap do |orders|
+      raise APINoDataError.new(orders['error']) if orders.is_a?(Hash) && orders['error'].eql?('no_data')
+      raise APIError.new(orders['error']) if orders.is_a?(Hash) && orders['error']
+    end
   end
 
   def fetch_order_details(order:)
@@ -80,11 +91,25 @@ class TicketWarehouse
       start_before: start_before,
       start_after: start_after)
     events.each do |event|
-      upload_event_to_s3(event)
+      upload_event_to_s3(event:event)
+
+      begin
+        orders = fetch_orders(event: event)
+        orders.each do |order|
+          order_details = fetch_order_details(order: order)
+          upload_order_to_s3(event:event, order:order_details)
+
+          order_details['Ticket'].each do |ticket|
+            upload_ticket_to_s3(event:event, ticket:ticket)
+          end
+        end
+      rescue APINoDataError => error
+        puts "No orders for event #{event['Event']['name']}"
+      end
     end
   end
   
-  def generate_file_path(event)
+  def generate_file_path(event:, table_name:)
     location = url_safe_name(event['Event']['location'])
     event_name = url_safe_name(event['Event']['name'])
     start = DateTime.parse(event['Event']['start'])
@@ -93,7 +118,7 @@ class TicketWarehouse
     month_name = Date::MONTHNAMES[start.month]
     day_number = start.day.to_s.rjust(2, '0')
     
-    "events/venue=#{location}/year=#{year}/month=#{month_name}/day=#{day_number}/#{event_name}.json"
+    "#{table_name}/venue=#{location}/year=#{year}/month=#{month_name}/day=#{day_number}/"
   end
   
   private
@@ -102,8 +127,9 @@ class TicketWarehouse
     name.gsub(/[^0-9A-Za-z]/, '-').squeeze('-').downcase
   end
 
-  def upload_event_to_s3(event)
-    file_path = generate_file_path(event)
+  def upload_event_to_s3(event:)
+    file_path = generate_file_path(event:event, table_name:'events') +
+      "#{event['Event']['name']}.json"
     puts "Archiving event to S3 at file path: #{file_path}" +
       "\n#{JSON.pretty_generate(event)}"
     bucket_name = ENV['BUCKET_NAME']
@@ -111,6 +137,30 @@ class TicketWarehouse
     s3_object = @s3.bucket(bucket_name).object(file_path)
     
     s3_object.put(body: event.to_json)
+  end
+
+  def upload_order_to_s3(event:, order:)
+    file_path = generate_file_path(event:event, table_name:'orders') +
+      "#{order['Order']['id']}.json"
+    puts "Archiving order to S3 at file path: #{file_path}" +
+      "\n#{JSON.pretty_generate(order)}"
+    bucket_name = ENV['BUCKET_NAME']
+    
+    s3_object = @s3.bucket(bucket_name).object(file_path)
+    
+    s3_object.put(body: order.to_json)
+  end
+
+  def upload_ticket_to_s3(event:, ticket:)
+    file_path = generate_file_path(event:event, table_name:'tickets') +
+      "#{ticket['id']}.json"
+    puts "Archiving ticket to S3 at file path: #{file_path}" +
+      "\n#{JSON.pretty_generate(ticket)}"
+    bucket_name = ENV['BUCKET_NAME']
+    
+    s3_object = @s3.bucket(bucket_name).object(file_path)
+    
+    s3_object.put(body: ticket.to_json)
   end
 
 end
