@@ -1,6 +1,8 @@
-require 'rest-client'
 require 'json'
 require 'pry'
+require 'date'
+require 'rest-client'
+require 'aws-sdk-s3'
 
 RestClient.log = STDOUT
 
@@ -14,6 +16,7 @@ class TicketWarehouse
     @client_id = client_id
     @client_secret = client_secret
     @access_token = nil
+    @s3 = Aws::S3::Resource.new(region: 'us-east-1')
   end
 
   def authenticate!
@@ -56,7 +59,7 @@ class TicketWarehouse
     JSON.parse(response.body)
   end
 
-  def archive_events(time_range:)
+  def archive_events(time_range:nil)
     start_before = nil
     start_after = nil
     case time_range
@@ -65,18 +68,49 @@ class TicketWarehouse
         # Now minus one day.
         (Time.now - 86400).strftime('%Y-%m-%d')
       start_before =
-        # Now plus one day.
-        (Time.now + 86400).strftime('%Y-%m-%d')
+        # Now plus two days.
+        (Time.now + 86400 * 2).strftime('%Y-%m-%d')
     when :upcoming
-      start_after = Time.now.strftime('%Y-%m-%d')
+      start_after =
+        # Now minus one day.
+        (Time.now - 86400).strftime('%Y-%m-%d')
     end
 
     events = fetch_events(
       start_before: start_before,
       start_after: start_after)
     events.each do |event|
-      # TODO archive event.
-      require 'pry'; binding.pry
+      upload_event_to_s3(event)
     end
   end
+  
+  def generate_file_path(event)
+    location = url_safe_name(event['Event']['location'])
+    event_name = url_safe_name(event['Event']['name'])
+    start = DateTime.parse(event['Event']['start'])
+    
+    year = start.year.to_s
+    month_name = Date::MONTHNAMES[start.month]
+    day_number = start.day.to_s.rjust(2, '0')
+    
+    "/events/#{location}/#{year}/#{month_name}/#{day_number}/#{event_name}.json"
+  end
+  
+  private
+  
+  def url_safe_name(name)
+    name.gsub(/[^0-9A-Za-z]/, '-').squeeze('-').downcase
+  end
+
+  def upload_event_to_s3(event)
+    file_path = generate_file_path(event)
+    puts "Archiving event to S3 at file path: #{file_path}" +
+      "\n#{JSON.pretty_generate(event)}"
+    bucket_name = ENV['BUCKET_NAME']
+    
+    s3_object = @s3.bucket(bucket_name).object(file_path)
+    
+    s3_object.put(body: event.to_json)
+  end
+
 end

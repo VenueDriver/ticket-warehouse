@@ -55,7 +55,6 @@ describe TicketWarehouse do
       start_before: start_before_date, 
       start_after: start_after_date)
     expect(events).to be_a(Array)
-    require 'pry'; binding.pry
   end
 
   it 'fetches orders for a given event' do
@@ -101,5 +100,32 @@ describe TicketWarehouse do
     event = events.first
     checkin_ids = warehouse.fetch_checkin_ids(event: event)
     expect(checkin_ids).to be_a(Array)  # Assuming checkin_ids is an array
+  end
+
+  it 'archives events' do
+    warehouse = TicketWarehouse.new(
+      client_id:     ENV['TICKETSAUCE_CLIENT_ID'],
+      client_secret: ENV['TICKETSAUCE_CLIENT_SECRET']
+    )
+    warehouse.authenticate!
+    warehouse.archive_events()
+  end
+
+  describe '#generate_file_path' do
+    it 'generates a file path based on event data' do
+      warehouse = TicketWarehouse.new(
+        client_id:     ENV['TICKETSAUCE_CLIENT_ID'],
+        client_secret: ENV['TICKETSAUCE_CLIENT_SECRET']
+      )
+      event = {
+        'Event' => {
+          'location_name' => 'Test Location',
+          'name' => 'Test Event',
+          'start' => '2023-10-15T20:00:00'
+        }
+      }
+      expected_path = '/events/test-location/2023/October/15/test-event.json'
+      expect(warehouse.generate_file_path(event)).to eq(expected_path)
+    end
   end
 end

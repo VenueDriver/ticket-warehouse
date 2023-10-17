@@ -59,20 +59,72 @@ export class TicketWarehouseStack extends cdk.Stack {
       })
     }));
 
-    // 4. Create an AWS Athena table definition
     new CfnNamedQuery(this, 'AthenaTicketQuery', {
-      database: 'your_database_name',  // Change to your Athena database name
+      database: 'ticket_warehouse',
       queryString: `
         CREATE EXTERNAL TABLE IF NOT EXISTS ticket_table (
-          // Define your table columns here, e.g., id STRING, name STRING, etc.
+          Event struct<
+            active: boolean,
+            address: string,
+            address2: string,
+            city: string,
+            country: string,
+            created: string,
+            custom_id: string,
+            show_start: boolean,
+            show_end: boolean,
+            end: string,
+            end_utc: string,
+            featured: boolean,
+            id: string,
+            latitude: string,
+            longitude: string,
+            map_zoom: string,
+            modified: string,
+            online_only: boolean,
+            activity_producer_id: string,
+            organization_id: string,
+            partner_id: string,
+            postal_code: string,
+            privacy_type: string,
+            region: string,
+            slug: string,
+            start: string,
+            start_utc: string,
+            state: string,
+            tickets_active: boolean,
+            timezone: string,
+            website: string,
+            event_topic_id: string,
+            organization_name: string,
+            locale: string,
+            name: string,
+            location: string,
+            scheduled_publish_datetime_utc: string,
+            event_topic: string,
+            category: string,
+            event_url: string,
+            tickets_url: string,
+            display_times: boolean,
+            order_count: int
+          >,
+          Logo struct<
+            url: string,
+            created: string
+          >,
+          Masthead struct<
+            url: string,
+            created: string
+          >
         )
-        ROW FORMAT DELIMITED 
-        FIELDS TERMINATED BY ',' 
-        STORED AS TEXTFILE
-        LOCATION 's3://${ticketWarehouseBucket.bucketName}/your_folder_name/'
+        ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'
+        STORED AS INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat' 
+        OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
+        LOCATION 's3://${ticketWarehouseBucket.bucketName}/events/'
       `,
       name: 'TicketTableDefinition',
     });
+    
   }
 }
 
