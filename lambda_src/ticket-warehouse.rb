@@ -93,7 +93,7 @@ class TicketWarehouse
     month_name = Date::MONTHNAMES[start.month]
     day_number = start.day.to_s.rjust(2, '0')
     
-    "/events/#{location}/#{year}/#{month_name}/#{day_number}/#{event_name}.json"
+    "events/venue=#{location}/year=#{year}/month=#{month_name}/day=#{day_number}/#{event_name}.json"
   end
   
   private

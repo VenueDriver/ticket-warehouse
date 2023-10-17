@@ -3,10 +3,12 @@ import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { Function, Runtime, Code } from 'aws-cdk-lib/aws-lambda';
 import { Rule, Schedule } from 'aws-cdk-lib/aws-events';
 import { LambdaFunction } from 'aws-cdk-lib/aws-events-targets';
-import { CfnNamedQuery } from 'aws-cdk-lib/aws-athena';
 import { Construct } from 'constructs';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as targets from 'aws-cdk-lib/aws-events-targets';
+import * as athena from 'aws-cdk-lib/aws-athena';
+import { CfnNamedQuery } from 'aws-cdk-lib/aws-athena';
+import { aws_iam as iam } from 'aws-cdk-lib';
 
 import * as dotenv from 'dotenv';
 dotenv.config();
@@ -37,8 +39,10 @@ export class TicketWarehouseStack extends cdk.Stack {
         'BUCKET_NAME': ticketWarehouseBucket.bucketName,
         'TICKETSAUCE_CLIENT_ID': process.env.TICKETSAUCE_CLIENT_ID || '',
         'TICKETSAUCE_CLIENT_SECRET': process.env.TICKETSAUCE_CLIENT_SECRET || ''
-      }
+      },
+      timeout: cdk.Duration.seconds(900),  // Set timeout to maximum value
     });
+    ticketWarehouseBucket.grantReadWrite(ticketLambda);
 
     // 3. Set up EventBridge to trigger the Lambda function every 15 minutes
     const ruleForUpcomingEvents = new events.Rule(this, 'RuleForUpcoming', {
@@ -46,7 +50,7 @@ export class TicketWarehouseStack extends cdk.Stack {
     });
     ruleForUpcomingEvents.addTarget(new targets.LambdaFunction(ticketLambda, {
       event: events.RuleTargetInput.fromObject({
-        timeRange: 'upcoming'
+        time_range: 'upcoming'
       })
     }));
     
@@ -55,14 +59,53 @@ export class TicketWarehouseStack extends cdk.Stack {
     });
     ruleForCurrentEvents.addTarget(new targets.LambdaFunction(ticketLambda, {
       event: events.RuleTargetInput.fromObject({
-        timeRange: 'current'
+        time_range: 'current'
       })
     }));
 
+    // 4. Set up AWS Athena to make the data queryable.
+    const queryResultsSubfolder = 'athena-query-results/';
+    const athenaRole = new iam.Role(this, 'AthenaExecutionRole', {
+      assumedBy: new iam.ServicePrincipal('athena.amazonaws.com'),
+      inlinePolicies: {
+        AthenaS3Access: new iam.PolicyDocument({
+          statements: [
+            new iam.PolicyStatement({
+              actions: [
+                "s3:GetObject",
+                "s3:PutObject",
+                "s3:ListBucket",
+                "s3:GetBucketLocation"
+              ],
+              resources: [ticketWarehouseBucket.bucketArn, `${ticketWarehouseBucket.bucketArn}/*`]
+            }),
+          ],
+        }),
+      },
+    });
+    new athena.CfnWorkGroup(this, 'AthenaWorkGroup', {
+      name: 'TicketWarehouse',
+      description: 'For the Ticketsauce ticket warehouse',
+      recursiveDeleteOption: false,
+      state: 'ENABLED',
+      workGroupConfiguration: {
+        enforceWorkGroupConfiguration: false,
+        executionRole: athenaRole.roleArn,
+        resultConfiguration: {
+          outputLocation: `${ticketWarehouseBucket.s3UrlForObject(queryResultsSubfolder)}`, 
+          encryptionConfiguration: {
+            encryptionOption: 'SSE_S3' // Server-side encryption using S3-managed keys
+          }
+        },
+        publishCloudWatchMetricsEnabled: false
+      }
+    });
+
     new CfnNamedQuery(this, 'AthenaTicketQuery', {
       database: 'ticket_warehouse',
+      workGroup: 'TicketWarehouse',
       queryString: `
-        CREATE EXTERNAL TABLE IF NOT EXISTS ticket_table (
+        CREATE EXTERNAL TABLE IF NOT EXISTS events (
           Event struct<
             active: boolean,
             address: string,
@@ -73,7 +116,7 @@ export class TicketWarehouseStack extends cdk.Stack {
             custom_id: string,
             show_start: boolean,
             show_end: boolean,
-            end: string,
+            \`end\`: string,
             end_utc: string,
             featured: boolean,
             id: string,
@@ -116,6 +159,12 @@ export class TicketWarehouseStack extends cdk.Stack {
             url: string,
             created: string
           >
+        )
+        PARTITIONED BY ( 
+          venue string,
+          year string,
+          month string,
+          day string
         )
         ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'
         STORED AS INPUTFORMAT 'org.apache.hadoop.mapred.TextInputFormat' 

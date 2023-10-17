@@ -124,7 +124,7 @@ describe TicketWarehouse do
           'start' => '2023-10-15T20:00:00'
         }
       }
-      expected_path = '/events/test-location/2023/October/15/test-event.json'
+      expected_path = 'events/test-location/2023/October/15/test-event.json'
       expect(warehouse.generate_file_path(event)).to eq(expected_path)
     end
   end
