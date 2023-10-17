@@ -25,9 +25,10 @@ class TicketWarehouse
     @access_token = JSON.parse(response.body)['access_token']
   end
 
-  def fetch_events(organization_id: nil, start_after: nil)
+  def fetch_events(organization_id: nil, start_before: nil, start_after: nil)
     params = {}
     params[:organization_id] = organization_id if organization_id
+    params[:start_before] = start_before if start_before
     params[:start_after] = start_after if start_after
     
     query_string = params.empty? ? '' : '?' + URI.encode_www_form(params)
@@ -53,5 +54,29 @@ class TicketWarehouse
     event_id = event['Event']['id']
     response = RestClient.get("https://api.ticketsauce.com/v2/tickets/checkin_ids/#{event_id}", { Authorization: "Bearer #{@access_token}" })
     JSON.parse(response.body)
+  end
+
+  def archive_events(time_range:)
+    start_before = nil
+    start_after = nil
+    case time_range
+    when :current
+      start_after =
+        # Now minus one day.
+        (Time.now - 86400).strftime('%Y-%m-%d')
+      start_before =
+        # Now plus one day.
+        (Time.now + 86400).strftime('%Y-%m-%d')
+    when :upcoming
+      start_after = Time.now.strftime('%Y-%m-%d')
+    end
+
+    events = fetch_events(
+      start_before: start_before,
+      start_after: start_after)
+    events.each do |event|
+      # TODO archive event.
+      require 'pry'; binding.pry
+    end
   end
 end
