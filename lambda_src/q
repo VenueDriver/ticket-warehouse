@@ -1,0 +1,18 @@
+
+[1mFrom:[0m /home/ec2-user/efs/ticket-warehouse/lambda_src/athena-manager.rb:68 AthenaManager#wait_for_query_to_complete:
+
+    [1;34m60[0m: [32mdef[0m [1;34mwait_for_query_to_complete[0m(query_execution_id)
+    [1;34m61[0m:   loop [32mdo[0m
+    [1;34m62[0m:     response = @client.get_query_execution({
+    [1;34m63[0m:       [35mquery_execution_id[0m: query_execution_id
+    [1;34m64[0m:     })
+    [1;34m65[0m:     status = response.query_execution.status.state
+    [1;34m66[0m:     [32mif[0m [31m[1;31m%w[[0m[31mSUCCEEDED FAILED CANCELLED[1;31m][0m[31m[0m.include?(status)
+    [1;34m67[0m:       puts [31m[1;31m"[0m[31mQuery #{query_execution_id}[0m[31m finished with status: #{status}[0m[31m[1;31m"[0m[31m[0m
+ => [1;34m68[0m:       require [31m[1;31m'[0m[31mpry[1;31m'[0m[31m[0m; binding.pry
+    [1;34m69[0m:       [32mbreak[0m
+    [1;34m70[0m:     [32mend[0m
+    [1;34m71[0m:     sleep([1;34m5[0m)  [1;34m# Wait for 5 seconds before polling again[0m
+    [1;34m72[0m:   [32mend[0m
+    [1;34m73[0m: [32mend[0m
+

@@ -44,6 +44,16 @@ export class TicketWarehouseStack extends cdk.Stack {
     });
     ticketWarehouseBucket.grantReadWrite(ticketLambda);
 
+    ticketLambda.addToRolePolicy(new iam.PolicyStatement({
+      actions: [
+        'athena:GetNamedQuery',
+        'athena:ListNamedQueries',
+        'athena:StartQueryExecution',
+        'athena:GetQueryExecution'
+      ],
+      resources: ['*'],
+    }));
+
     // 3. Set up EventBridge to trigger the Lambda function every 15 minutes
     const ruleForUpcomingEvents = new events.Rule(this, 'RuleForUpcoming', {
       schedule: events.Schedule.rate(cdk.Duration.minutes(15))
@@ -83,7 +93,7 @@ export class TicketWarehouseStack extends cdk.Stack {
         }),
       },
     });
-    new athena.CfnWorkGroup(this, 'AthenaWorkGroup', {
+    const athenaWorkgroup = new athena.CfnWorkGroup(this, 'AthenaWorkGroup', {
       name: 'TicketWarehouse',
       description: 'For the Ticketsauce ticket warehouse',
       recursiveDeleteOption: false,
@@ -101,7 +111,7 @@ export class TicketWarehouseStack extends cdk.Stack {
       }
     });
 
-    new CfnNamedQuery(this, 'EventsDDLQuery', {
+    const EventsDDLQuery = new CfnNamedQuery(this, 'EventsDDLQuery', {
       database: 'ticket_warehouse',
       workGroup: 'TicketWarehouse',
       queryString: `
@@ -173,8 +183,9 @@ export class TicketWarehouseStack extends cdk.Stack {
       `,
       name: 'EventsTableDefinition',
     });
+    EventsDDLQuery.node.addDependency(athenaWorkgroup);
 
-    new CfnNamedQuery(this, 'OrdersDDLQuery', {
+    const OrdersDDLQuery = new CfnNamedQuery(this, 'OrdersDDLQuery', {
       database: 'ticket_warehouse',
       workGroup: 'TicketWarehouse',
       queryString: `
@@ -240,8 +251,9 @@ export class TicketWarehouseStack extends cdk.Stack {
       `,
       name: 'OrdersTableDefinition',
     });
+    OrdersDDLQuery.node.addDependency(athenaWorkgroup);
 
-    new CfnNamedQuery(this, 'TicketsDDLQuery', {
+    const ticketsDDLQuery = new CfnNamedQuery(this, 'TicketsDDLQuery', {
       database: 'ticket_warehouse',
       workGroup: 'TicketWarehouse',
       queryString: `
@@ -271,8 +283,16 @@ export class TicketWarehouseStack extends cdk.Stack {
       `,
       name: 'TicketsTableDefinition',
     });
+    ticketsDDLQuery.node.addDependency(athenaWorkgroup);
     
-    
+    // Create Athena database
+    const athenaDatabase = new athena.CfnNamedQuery(this, 'CreateDatabase', {
+      database: 'ticket_warehouse',
+      workGroup: 'TicketWarehouse',
+      queryString: 'CREATE DATABASE ticket_warehouse',
+      name: 'CreateDatabase',
+    });
+    athenaDatabase.node.addDependency(athenaWorkgroup);
   }
 }
 

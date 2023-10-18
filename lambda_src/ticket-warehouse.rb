@@ -3,8 +3,11 @@ require 'pry'
 require 'date'
 require 'rest-client'
 require 'aws-sdk-s3'
+require 'aws-sdk-athena'
 
-RestClient.log = STDOUT
+require_relative 'athena-manager'
+
+# RestClient.log = STDOUT
 
 require 'dotenv'
 Dotenv.load('../.env')
@@ -17,6 +20,7 @@ class TicketWarehouse
     @client_secret = client_secret
     @access_token = nil
     @s3 = Aws::S3::Resource.new(region: 'us-east-1')
+    @athena = AthenaManager.new
   end
 
   def authenticate!
@@ -71,6 +75,14 @@ class TicketWarehouse
   end
 
   def archive_events(time_range:nil)
+    puts "Archiving events for time range: #{time_range}"
+
+    puts "Ensuring Athena tables are up to date"
+    @athena.start_query(query_name:'CreateDatabase')
+    @athena.start_query(query_name:'EventsTableDefinition')
+    @athena.start_query(query_name:'OrdersTableDefinition')
+    @athena.start_query(query_name:'TicketsTableDefinition')
+
     start_before = nil
     start_after = nil
     case time_range
@@ -102,10 +114,16 @@ class TicketWarehouse
           order_details['Ticket'].each do |ticket|
             upload_ticket_to_s3(event:event, ticket:ticket)
           end
+          puts "Archived #{order_details['Ticket'].length} tickets for order #{order['Order']['id']}"
         end
+        puts "Archived #{orders.length} orders for event #{event['Event']['name']}"
       rescue APINoDataError => error
         puts "No orders for event #{event['Event']['name']}"
       end
+    end
+
+    %w[events orders tickets].each do |table|
+      @athena.repair_table(table)
     end
   end
   
@@ -142,8 +160,6 @@ class TicketWarehouse
   def upload_order_to_s3(event:, order:)
     file_path = generate_file_path(event:event, table_name:'orders') +
       "#{order['Order']['id']}.json"
-    puts "Archiving order to S3 at file path: #{file_path}" +
-      "\n#{JSON.pretty_generate(order)}"
     bucket_name = ENV['BUCKET_NAME']
     
     s3_object = @s3.bucket(bucket_name).object(file_path)
@@ -154,8 +170,6 @@ class TicketWarehouse
   def upload_ticket_to_s3(event:, ticket:)
     file_path = generate_file_path(event:event, table_name:'tickets') +
       "#{ticket['id']}.json"
-    puts "Archiving ticket to S3 at file path: #{file_path}" +
-      "\n#{JSON.pretty_generate(ticket)}"
     bucket_name = ENV['BUCKET_NAME']
     
     s3_object = @s3.bucket(bucket_name).object(file_path)
