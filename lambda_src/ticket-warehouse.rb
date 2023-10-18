@@ -4,6 +4,7 @@ require 'date'
 require 'rest-client'
 require 'aws-sdk-s3'
 require 'aws-sdk-athena'
+require 'concurrent'
 
 require_relative 'athena-manager'
 
@@ -74,26 +75,26 @@ class TicketWarehouse
     JSON.parse(response.body)
   end
 
-  def archive_events(time_range:nil)
+  def archive_events(time_range: nil, num_threads: 4)
     puts "Archiving events for time range: #{time_range}"
 
-    puts "Ensuring Athena tables are up to date"
-    @athena.start_query(query_name:'CreateDatabase')
-    @athena.start_query(query_name:'EventsTableDefinition')
-    @athena.start_query(query_name:'OrdersTableDefinition')
-    @athena.start_query(query_name:'TicketsTableDefinition')
+    puts "Creating Athena database and tables if necessary"
+    @athena.start_query(query_name: 'CreateDatabase')
+    @athena.start_query(query_name: 'EventsTableDefinition')
+    @athena.start_query(query_name: 'OrdersTableDefinition')
+    @athena.start_query(query_name: 'TicketsTableDefinition')
 
     start_before = nil
     start_after = nil
     case time_range
-    when :current
+    when 'current'
       start_after =
         # Now minus one day.
         (Time.now - 86400).strftime('%Y-%m-%d')
       start_before =
         # Now plus two days.
         (Time.now + 86400 * 2).strftime('%Y-%m-%d')
-    when :upcoming
+    when 'upcoming'
       start_after =
         # Now minus one day.
         (Time.now - 86400).strftime('%Y-%m-%d')
@@ -102,34 +103,55 @@ class TicketWarehouse
     events = fetch_events(
       start_before: start_before,
       start_after: start_after)
+
+    puts "Archiving #{events.length} events."
+
+    num_threads = 8
+    pool = Concurrent::ThreadPoolExecutor.new(
+      min_threads: num_threads,
+      max_threads: num_threads,
+      max_queue: 0,
+      fallback_policy: :caller_runs
+    )
+
     events.each do |event|
-      upload_event_to_s3(event:event)
+      pool.post do
+        upload_event_to_s3(event: event)
 
-      begin
-        orders = fetch_orders(event: event)
-        orders.each do |order|
-          order_details = fetch_order_details(order: order)
-          upload_order_to_s3(event:event, order:order_details)
+        begin
+          archived_tickets_count = 0
+          orders = fetch_orders(event: event)
 
-          order_details['Ticket'].each do |ticket|
-            upload_ticket_to_s3(event:event, ticket:ticket)
+          Concurrent::Array.new(orders).each do |order|
+            order_details = fetch_order_details(order: order)
+            upload_order_to_s3(event: event, order: order_details)
+
+            order_details['Ticket'].each do |ticket|
+              upload_ticket_to_s3(event: event, ticket: ticket)
+            end
+            archived_tickets_count += order_details['Ticket'].length
           end
-          puts "Archived #{order_details['Ticket'].length} tickets for order #{order['Order']['id']}"
+
+          puts "Archived #{orders.length} orders with #{archived_tickets_count} tickets for event #{event['Event']['name']}"
+        rescue APINoDataError => error
+          puts "No orders for event #{event['Event']['name']}"
         end
-        puts "Archived #{orders.length} orders for event #{event['Event']['name']}"
-      rescue APINoDataError => error
-        puts "No orders for event #{event['Event']['name']}"
       end
     end
 
+    pool.shutdown
+    pool.wait_for_termination
+
+    puts "Archived #{events.length} events."
+
     %w[events orders tickets].each do |table|
+      puts "Repairing table: #{table}"
       @athena.repair_table(table)
     end
   end
   
   def generate_file_path(event:, table_name:)
     location = url_safe_name(event['Event']['location'])
-    event_name = url_safe_name(event['Event']['name'])
     start = DateTime.parse(event['Event']['start'])
     
     year = start.year.to_s
@@ -146,10 +168,10 @@ class TicketWarehouse
   end
 
   def upload_event_to_s3(event:)
+    event_name = url_safe_name(event['Event']['name'])
     file_path = generate_file_path(event:event, table_name:'events') +
-      "#{event['Event']['name']}.json"
-    puts "Archiving event to S3 at file path: #{file_path}" +
-      "\n#{JSON.pretty_generate(event)}"
+      "#{event_name}.json"
+    puts "Archiving event to S3 at file path: #{file_path}"
     bucket_name = ENV['BUCKET_NAME']
     
     s3_object = @s3.bucket(bucket_name).object(file_path)

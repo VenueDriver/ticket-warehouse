@@ -49,14 +49,16 @@ export class TicketWarehouseStack extends cdk.Stack {
         'athena:GetNamedQuery',
         'athena:ListNamedQueries',
         'athena:StartQueryExecution',
-        'athena:GetQueryExecution'
+        'athena:GetQueryExecution',
+        'glue:CreateDatabase',
+        'glue:CreateTable'
       ],
       resources: ['*'],
     }));
 
-    // 3. Set up EventBridge to trigger the Lambda function every 15 minutes
+    // 3. Set up EventBridge to trigger the Lambda function periodically.
     const ruleForUpcomingEvents = new events.Rule(this, 'RuleForUpcoming', {
-      schedule: events.Schedule.rate(cdk.Duration.minutes(15))
+      schedule: events.Schedule.rate(cdk.Duration.minutes(4))
     });
     ruleForUpcomingEvents.addTarget(new targets.LambdaFunction(ticketLambda, {
       event: events.RuleTargetInput.fromObject({
@@ -142,7 +144,7 @@ export class TicketWarehouseStack extends cdk.Stack {
             privacy_type: string,
             region: string,
             slug: string,
-            start: string,
+            \`start\`: string,
             start_utc: string,
             state: string,
             tickets_active: boolean,
@@ -190,7 +192,7 @@ export class TicketWarehouseStack extends cdk.Stack {
       workGroup: 'TicketWarehouse',
       queryString: `
         CREATE EXTERNAL TABLE IF NOT EXISTS orders (
-          Order struct<
+          \`Order\` struct<
             id: string,
             status: string,
             last_name: string,

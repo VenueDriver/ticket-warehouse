@@ -66,6 +66,7 @@ class AthenaManager
       if %w[SUCCEEDED FAILED CANCELLED].include?(status)
         puts "Query #{query_execution_id} finished with status: #{status}"
         puts response.query_execution.status.state_change_reason
+        puts response
         break
       end
       sleep(5)  # Wait for 5 seconds before polling again

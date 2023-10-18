@@ -11,7 +11,7 @@ def lambda_handler(event:, context:)
     client_secret: ENV['TICKETSAUCE_CLIENT_SECRET']
   )
   warehouse.authenticate!
-  warehouse.archive_events(time_range: event['time_ange'])
+  warehouse.archive_events(time_range: event['time_range'])
 
   { statusCode: 200, body: JSON.generate('💪') }
 end
