@@ -79,20 +79,6 @@ class TicketWarehouse
   def archive_events(time_range: nil, num_threads: 4)
     puts "Archiving events for time range: #{time_range}"
 
-    # puts "Creating Athena database and tables if necessary"
-    # queries = [
-    #   'CreateDatabase',
-    #   # 'EventsTableDefinition',
-    #   # 'OrdersTableDefinition',
-    #   # 'TicketsTableDefinition'
-    # ]
-    # promises = queries.map do |query_name|
-    #   Concurrent::Promise.execute do
-    #     @athena.start_query(query_name: query_name)
-    #   end
-    # end
-    # Concurrent::Promise.zip(*promises).value
-
     start_before = nil
     start_after = nil
     case time_range
