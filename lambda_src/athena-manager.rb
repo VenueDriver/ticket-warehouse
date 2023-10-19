@@ -32,7 +32,7 @@ class AthenaManager
       return
     end
 
-    puts "Running query: #{query_string}"
+    # puts "Running query: #{query_string}"
 
     params = {
       query_string: query_string,
@@ -65,8 +65,10 @@ class AthenaManager
       status = response.query_execution.status.state
       if %w[SUCCEEDED FAILED CANCELLED].include?(status)
         puts "Query #{query_execution_id} finished with status: #{status}"
-        puts response.query_execution.status.state_change_reason
-        puts response
+        if status.eql?('FAILED')
+          puts response.query_execution.status.state_change_reason
+          puts response
+        end
         break
       end
       sleep(5)  # Wait for 5 seconds before polling again

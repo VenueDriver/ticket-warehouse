@@ -10,5 +10,5 @@ gem 'dotenv', '~> 2.8', '>= 2.8.1'
 
 gem 'rexml', '~> 3.2', '>= 3.2.6'
 gem 'aws-sdk-s3', '~> 1.136'
-gem 'aws-sdk-athena', '~> 1.75'
+gem 'aws-sdk-glue', '~> 1.157'
 gem 'concurrent-ruby', '~> 1.2', '>= 1.2.2'

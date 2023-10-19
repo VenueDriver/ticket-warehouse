@@ -3,7 +3,7 @@ require 'pry'
 require 'date'
 require 'rest-client'
 require 'aws-sdk-s3'
-require 'aws-sdk-athena'
+require 'aws-sdk-glue'
 require 'concurrent'
 
 require_relative 'athena-manager'
@@ -22,6 +22,7 @@ class TicketWarehouse
     @access_token = nil
     @s3 = Aws::S3::Resource.new(region: 'us-east-1')
     @athena = AthenaManager.new
+    @bucket_name = ENV['BUCKET_NAME']
   end
 
   def authenticate!
@@ -78,11 +79,19 @@ class TicketWarehouse
   def archive_events(time_range: nil, num_threads: 4)
     puts "Archiving events for time range: #{time_range}"
 
-    puts "Creating Athena database and tables if necessary"
-    @athena.start_query(query_name: 'CreateDatabase')
-    @athena.start_query(query_name: 'EventsTableDefinition')
-    @athena.start_query(query_name: 'OrdersTableDefinition')
-    @athena.start_query(query_name: 'TicketsTableDefinition')
+    # puts "Creating Athena database and tables if necessary"
+    # queries = [
+    #   'CreateDatabase',
+    #   # 'EventsTableDefinition',
+    #   # 'OrdersTableDefinition',
+    #   # 'TicketsTableDefinition'
+    # ]
+    # promises = queries.map do |query_name|
+    #   Concurrent::Promise.execute do
+    #     @athena.start_query(query_name: query_name)
+    #   end
+    # end
+    # Concurrent::Promise.zip(*promises).value
 
     start_before = nil
     start_after = nil
@@ -106,7 +115,7 @@ class TicketWarehouse
 
     puts "Archiving #{events.length} events."
 
-    num_threads = 8
+    num_threads = 4
     pool = Concurrent::ThreadPoolExecutor.new(
       min_threads: num_threads,
       max_threads: num_threads,
@@ -114,39 +123,58 @@ class TicketWarehouse
       fallback_policy: :caller_runs
     )
 
+    stop_due_to_error = Concurrent::AtomicBoolean.new(false)
     events.each do |event|
       pool.post do
-        upload_event_to_s3(event: event)
-
         begin
-          archived_tickets_count = 0
+          upload_event_to_s3(event: event)
+
+          # Archive orders.
           orders = fetch_orders(event: event)
-
-          Concurrent::Array.new(orders).each do |order|
-            order_details = fetch_order_details(order: order)
-            upload_order_to_s3(event: event, order: order_details)
-
-            order_details['Ticket'].each do |ticket|
-              upload_ticket_to_s3(event: event, ticket: ticket)
+          archived_tickets_count = 0
+          orders_with_order_details =
+            orders.map do |order|
+              fetch_order_details(order: order)
             end
-            archived_tickets_count += order_details['Ticket'].length
-          end
+          upload_orders_to_s3(event: event, orders: orders_with_order_details)
+          tickets_for_orders =
+            orders_with_order_details.map do |order|
+              order['Ticket']
+            end.flatten
+          upload_tickets_to_s3(event: event, tickets: tickets_for_orders)
 
-          puts "Archived #{orders.length} orders with #{archived_tickets_count} tickets for event #{event['Event']['name']}"
+          puts "Archived #{orders.count} orders with #{tickets_for_orders.count} tickets for event #{event['Event']['name']}"
         rescue APINoDataError => error
           puts "No orders for event #{event['Event']['name']}"
+        rescue => error
+          puts "Error archiving event #{event['Event']['name']}: #{error.message}"
+          puts error.backtrace.join("\n")
+          stop_due_to_error.make_true
+        ensure
+          if stop_due_to_error.true?
+            puts "Stopping due to error..."
+            pool.kill
+          end
         end
       end
     end
 
     pool.shutdown
+    puts "Waiting for all threads to complete..."
     pool.wait_for_termination
 
     puts "Archived #{events.length} events."
 
-    %w[events orders tickets].each do |table|
-      puts "Repairing table: #{table}"
-      @athena.repair_table(table)
+    # Trigger the Glue crawlers to update the Athena tables.
+    glue_client = Aws::Glue::Client.new(region: 'us-east-1')
+
+    [
+      'ticket-warehouse-events-crawler',
+      'ticket-warehouse-orders-crawler',
+      'ticket-warehouse-tickets-crawler'
+    ].each do |crawler_name|
+      glue_client.start_crawler(name: crawler_name)
+      puts "Started the Glue crawler: #{crawler_name}"
     end
   end
   
@@ -167,36 +195,41 @@ class TicketWarehouse
     name.gsub(/[^0-9A-Za-z]/, '-').squeeze('-').downcase
   end
 
+  def to_ndjson(data)
+    data.map { |item| JSON.generate(item) }.join("\n")
+  end
+
   def upload_event_to_s3(event:)
     event_name = url_safe_name(event['Event']['name'])
     file_path = generate_file_path(event:event, table_name:'events') +
       "#{event_name}.json"
     puts "Archiving event to S3 at file path: #{file_path}"
-    bucket_name = ENV['BUCKET_NAME']
     
-    s3_object = @s3.bucket(bucket_name).object(file_path)
+    s3_object = @s3.bucket(@bucket_name).object(file_path)
     
-    s3_object.put(body: event.to_json)
+    s3_object.put(body: JSON.generate(event))
   end
 
-  def upload_order_to_s3(event:, order:)
+  def upload_orders_to_s3(event:, orders:)
+    event_name = event['Event']['name']
     file_path = generate_file_path(event:event, table_name:'orders') +
-      "#{order['Order']['id']}.json"
-    bucket_name = ENV['BUCKET_NAME']
+      "#{url_safe_name(event_name)}.json"
+    puts "Archiving orders for event #{event_name} to S3 at file path: #{file_path}"
     
-    s3_object = @s3.bucket(bucket_name).object(file_path)
+    s3_object = @s3.bucket(@bucket_name).object(file_path)
     
-    s3_object.put(body: order.to_json)
+    s3_object.put(body: to_ndjson(orders))
   end
 
-  def upload_ticket_to_s3(event:, ticket:)
+  def upload_tickets_to_s3(event:, tickets:)
+    event_name = event['Event']['name']
     file_path = generate_file_path(event:event, table_name:'tickets') +
-      "#{ticket['id']}.json"
-    bucket_name = ENV['BUCKET_NAME']
+      "#{url_safe_name(event_name)}.json"
+    puts "Archiving tickets for event #{event_name} to S3 at file path: #{file_path}"
     
-    s3_object = @s3.bucket(bucket_name).object(file_path)
-    
-    s3_object.put(body: ticket.to_json)
+    s3_object = @s3.bucket(@bucket_name).object(file_path)
+
+    s3_object.put(body: to_ndjson(tickets))
   end
 
 end
