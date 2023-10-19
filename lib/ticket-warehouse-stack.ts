@@ -45,7 +45,7 @@ export class TicketWarehouseStack extends cdk.Stack {
       // Set timeout to maximum value
       timeout: cdk.Duration.seconds(900),
       // Limit concurrency to 1, since the timeout is at the max.
-      reservedConcurrentExecutions: 1,
+      reservedConcurrentExecutions: 2,
       memorySize: 1024,
     });
     ticketWarehouseBucket.grantReadWrite(ticketLambda);
@@ -65,7 +65,7 @@ export class TicketWarehouseStack extends cdk.Stack {
 
     // 3. Set up EventBridge to trigger the Lambda function periodically.
     const ruleForUpcomingEvents = new events.Rule(this, 'RuleForUpcoming', {
-      schedule: events.Schedule.rate(cdk.Duration.minutes(10))
+      schedule: events.Schedule.rate(cdk.Duration.hours(1))
     });
     ruleForUpcomingEvents.addTarget(new targets.LambdaFunction(ticketLambda, {
       event: events.RuleTargetInput.fromObject({
@@ -74,7 +74,7 @@ export class TicketWarehouseStack extends cdk.Stack {
     }));
     
     const ruleForCurrentEvents = new events.Rule(this, 'RuleForCurrent', {
-      schedule: events.Schedule.rate(cdk.Duration.hours(24))
+      schedule: events.Schedule.rate(cdk.Duration.minutes(5))
     });
     ruleForCurrentEvents.addTarget(new targets.LambdaFunction(ticketLambda, {
       event: events.RuleTargetInput.fromObject({
@@ -165,6 +165,22 @@ export class TicketWarehouseStack extends cdk.Stack {
       }
     });
 
+    // Add a crawler for Checkin IDs data
+    const checkinIDsCrawler = new glue.CfnCrawler(this, 'CheckinIDsCrawler', {
+      databaseName: 'ticket_warehouse',
+      role: glueCrawlerRole.roleArn,
+      targets: {
+        s3Targets: [{
+          path: `s3://${ticketWarehouseBucket.bucketName}/checkin_ids/`
+        }]
+      },
+      name: 'ticket-warehouse-checkin-ids-crawler',
+      tablePrefix: 'ticket_warehouse_',
+      schemaChangePolicy: {
+        deleteBehavior: 'LOG'
+      }
+    });
+    
     const queryResultsSubfolder = 'athena-query-results/';
     const athenaRole = new iam.Role(this, 'AthenaExecutionRole', {
       assumedBy: new iam.ServicePrincipal('athena.amazonaws.com'),

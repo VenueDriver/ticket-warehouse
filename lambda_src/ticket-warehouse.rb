@@ -93,6 +93,13 @@ class TicketWarehouse
       start_after =
         # Now minus one day.
         (Time.now - 86400).strftime('%Y-%m-%d')
+    when 'recent'
+      start_after =
+        # Now minus 30 days.
+        (Time.now - 86400 * 30).strftime('%Y-%m-%d')
+      start_before =
+        # Now minus one day.
+        (Time.now - 86400).strftime('%Y-%m-%d')
     end
 
     events = fetch_events(
@@ -113,23 +120,58 @@ class TicketWarehouse
     events.each do |event|
       pool.post do
         begin
-          upload_event_to_s3(event: event)
+          # Archive the event.
+          upload_to_s3(
+            event: event,
+            data: [event],
+            table_name: 'events'
+          )
 
-          # Archive orders.
+          # Archive orders for the event.
           orders = fetch_orders(event: event)
           archived_tickets_count = 0
           orders_with_order_details =
             orders.map do |order|
               fetch_order_details(order: order)
             end
-          upload_orders_to_s3(event: event, orders: orders_with_order_details)
+          upload_to_s3(
+            event: event,
+            data: orders_with_order_details,
+            table_name: 'orders'
+          )
+
+          # Archive tickets for the orders for the event.
           tickets_for_orders =
             orders_with_order_details.map do |order|
-              order['Ticket']
-            end.flatten
-          upload_tickets_to_s3(event: event, tickets: tickets_for_orders)
-
+              order['Ticket'].map do |ticket|
+                ticket.merge(
+                  'order_id' => order['Order']['id']
+                )
+              end
+            end.flatten.map do |ticket|
+                ticket.merge(
+                  'event_id' => event['Event']['id']
+                )
+              end
+          upload_to_s3(
+            event: event,
+            data: tickets_for_orders,
+            table_name: 'tickets'
+          )
+          
           puts "Archived #{orders.count} orders with #{tickets_for_orders.count} tickets for event #{event['Event']['name']}"
+
+          # Archive checkin IDs for the event.
+          checkin_ids = fetch_checkin_ids(event: event)
+          upload_to_s3(
+            event: event,
+            # The API gives us just a list of checkin IDs, not JSON data.
+            # So, transform it.  Give it a column name: 'ticket_id'.
+            data: checkin_ids.map{|id| {'ticket_id' => id} },
+            table_name: 'checkin_ids'
+          )
+
+          puts "Archived #{checkin_ids.count} checkin IDs for event #{event['Event']['name']}"
         rescue APINoDataError => error
           puts "No orders for event #{event['Event']['name']}"
         rescue => error
@@ -157,13 +199,14 @@ class TicketWarehouse
     [
       'ticket-warehouse-events-crawler',
       'ticket-warehouse-orders-crawler',
-      'ticket-warehouse-tickets-crawler'
+      'ticket-warehouse-tickets-crawler',
+      'ticket-warehouse-checkin-ids-crawler'
     ].each do |crawler_name|
       glue_client.start_crawler(name: crawler_name)
       puts "Started the Glue crawler: #{crawler_name}"
     end
   end
-  
+
   def generate_file_path(event:, table_name:)
     location = url_safe_name(event['Event']['location'])
     start = DateTime.parse(event['Event']['start'])
@@ -174,9 +217,9 @@ class TicketWarehouse
     
     "#{table_name}/venue=#{location}/year=#{year}/month=#{month_name}/day=#{day_number}/"
   end
-  
+
   private
-  
+
   def url_safe_name(name)
     name.gsub(/[^0-9A-Za-z]/, '-').squeeze('-').downcase
   end
@@ -185,37 +228,15 @@ class TicketWarehouse
     data.map { |item| JSON.generate(item) }.join("\n")
   end
 
-  def upload_event_to_s3(event:)
+  def upload_to_s3(event:, data:, table_name:)
     event_name = url_safe_name(event['Event']['name'])
-    file_path = generate_file_path(event:event, table_name:'events') +
-      "#{event_name}.json"
-    puts "Archiving event to S3 at file path: #{file_path}"
-    
-    s3_object = @s3.bucket(@bucket_name).object(file_path)
-    
-    s3_object.put(body: JSON.generate(event))
-  end
-
-  def upload_orders_to_s3(event:, orders:)
-    event_name = event['Event']['name']
-    file_path = generate_file_path(event:event, table_name:'orders') +
+    file_path = generate_file_path(event:event, table_name:table_name) +
       "#{url_safe_name(event_name)}.json"
-    puts "Archiving orders for event #{event_name} to S3 at file path: #{file_path}"
-    
-    s3_object = @s3.bucket(@bucket_name).object(file_path)
-    
-    s3_object.put(body: to_ndjson(orders))
-  end
-
-  def upload_tickets_to_s3(event:, tickets:)
-    event_name = event['Event']['name']
-    file_path = generate_file_path(event:event, table_name:'tickets') +
-      "#{url_safe_name(event_name)}.json"
-    puts "Archiving tickets for event #{event_name} to S3 at file path: #{file_path}"
+    puts "Archiving #{table_name} for event #{event_name} to S3 at file path: #{file_path}"
     
     s3_object = @s3.bucket(@bucket_name).object(file_path)
 
-    s3_object.put(body: to_ndjson(tickets))
+    s3_object.put(body: to_ndjson(data))
   end
 
 end
