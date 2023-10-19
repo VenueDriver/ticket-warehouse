@@ -49,8 +49,8 @@ describe TicketWarehouse do
       client_secret: ENV['TICKETSAUCE_CLIENT_SECRET']
     )
     warehouse.authenticate!
-    start_after_date = '2023-10-17'
-    start_before_date = '2023-10-19'
+    start_after_date = '2023-10-20'
+    start_before_date = '2023-10-22'
     events = warehouse.fetch_events(
       start_before: start_before_date, 
       start_after: start_after_date)
