@@ -134,14 +134,15 @@ class TicketWarehouse
   end
 
   def generate_file_path(event:, table_name:)
-    location = url_safe_name(event['Event']['location'])
+    location = url_safe_name(event['Event']['location_name'])
     start = DateTime.parse(event['Event']['start'])
     
     year = start.year.to_s
     month_name = Date::MONTHNAMES[start.month]
     day_number = start.day.to_s.rjust(2, '0')
+    event_name = url_safe_name(event['Event']['name'])
     
-    "#{table_name}/venue=#{location}/year=#{year}/month=#{month_name}/day=#{day_number}/"
+    "#{table_name}/#{location}/#{year}/#{month_name}/#{day_number}/#{event_name}.json"
   end
 
   def fetch_events_by_time_range(time_range: nil)
