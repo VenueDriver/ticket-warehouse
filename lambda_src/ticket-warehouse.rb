@@ -30,32 +30,7 @@ class TicketWarehouse
   def archive_events(time_range: nil, num_threads: 4)
     puts "Archiving events for time range: #{time_range}"
 
-    start_before = nil
-    start_after = nil
-    case time_range
-    when 'current'
-      start_after =
-        # Now minus one day.
-        (Time.now - 86400).strftime('%Y-%m-%d')
-      start_before =
-        # Now plus two days.
-        (Time.now + 86400 * 2).strftime('%Y-%m-%d')
-    when 'upcoming'
-      start_after =
-        # Now minus one day.
-        (Time.now - 86400).strftime('%Y-%m-%d')
-    when 'recent'
-      start_after =
-        # Now minus 30 days.
-        (Time.now - 86400 * 30).strftime('%Y-%m-%d')
-      start_before =
-        # Now minus one day.
-        (Time.now - 86400).strftime('%Y-%m-%d')
-    end
-
-    events = fetch_events(
-      start_before: start_before,
-      start_after: start_after)
+    events = fetch_events_by_time_range(time_range: time_range)
 
     puts "Archiving #{events.length} events."
 
@@ -167,6 +142,36 @@ class TicketWarehouse
     day_number = start.day.to_s.rjust(2, '0')
     
     "#{table_name}/venue=#{location}/year=#{year}/month=#{month_name}/day=#{day_number}/"
+  end
+
+  def fetch_events_by_time_range(time_range: nil)
+    start_before = nil
+    start_after = nil
+    case time_range
+    when 'current'
+      start_after =
+        # Now minus one day.
+        (Time.now - 86400).strftime('%Y-%m-%d')
+      start_before =
+        # Now plus two days.
+        (Time.now + 86400 * 2).strftime('%Y-%m-%d')
+    when 'upcoming'
+      start_after =
+        # Now minus one day.
+        (Time.now - 86400).strftime('%Y-%m-%d')
+    when 'recent'
+      start_after =
+        # Now minus 30 days.
+        (Time.now - 86400 * 30).strftime('%Y-%m-%d')
+      start_before =
+        # Now minus one day.
+        (Time.now - 86400).strftime('%Y-%m-%d')
+    end
+
+    events = fetch_events(
+      start_before: start_before,
+      start_after: start_after)
+    events
   end
 
   private
