@@ -5,8 +5,10 @@ require 'rest-client'
 require 'aws-sdk-s3'
 require 'aws-sdk-glue'
 require 'concurrent'
+require 'forwardable'
 
 require_relative 'athena-manager'
+require_relative 'lib/ticketsauce_api.rb'
 
 # RestClient.log = STDOUT
 
@@ -14,12 +16,12 @@ require 'dotenv'
 Dotenv.load('../.env')
 
 class TicketWarehouse
-  attr_reader :access_token
+  extend Forwardable
+  def_delegators :@ticketsauce_api, :access_token, :authenticate!, :fetch_events
+  def_delegators :@ticketsauce_api, :fetch_orders, :fetch_order_details, :fetch_checkin_ids
 
   def initialize(client_id:, client_secret:)
-    @client_id = client_id
-    @client_secret = client_secret
-    @access_token = nil
+    @ticketsauce_api = TicketsauceApi.new(client_id: client_id, client_secret: client_secret)
     @s3 = Aws::S3::Resource.new(region: 'us-east-1')
     @athena = AthenaManager.new
     @bucket_name = ENV['BUCKET_NAME']
@@ -32,90 +34,10 @@ class TicketWarehouse
     @existing_athena_partitions = nil
   end
 
-  def authenticate!
-    response = RestClient.post('https://api.ticketsauce.com/v2/oauth/token', {
-      grant_type: 'client_credentials',
-      client_id: @client_id,
-      client_secret: @client_secret
-    })
-    @access_token = JSON.parse(response.body)['access_token']
-  end
-
-  class APIError < StandardError
-  end
-  class APINoDataError < StandardError
-  end
-
-  def fetch_api_data(endpoint_url)
-    response = RestClient.get(endpoint_url, { Authorization: "Bearer #{@access_token}" })
-    JSON.parse(response.body).tap do |data|
-      raise APINoDataError.new(data['error']) if data.is_a?(Hash) && data['error'].eql?('no_data')
-      raise APIError.new(data['error']) if data.is_a?(Hash) && data['error']
-    end
-  end
-
-def fetch_events(organization_id: nil, start_before: nil, start_after: nil)
-  params = {}
-  params[:organization_id] = organization_id if organization_id
-  params[:start_before] = start_before if start_before
-  params[:start_after] = start_after if start_after
-  
-  query_string = params.empty? ? '' : '?' + URI.encode_www_form(params)
-  
-  fetch_api_data("https://api.ticketsauce.com/v2/events#{query_string}")
-end
-
-def fetch_orders(event:)
-  event_id = event['Event']['id']
-  fetch_api_data("https://api.ticketsauce.com/v2/orders/#{event_id}")
-end
-
-def fetch_order_details(order:)
-  order_id = order['Order']['id']
-  fetch_api_data("https://api.ticketsauce.com/v2/order/#{order_id}")
-end
-
-def fetch_checkin_ids(event:)
-  event_id = event['Event']['id']
-  fetch_api_data("https://api.ticketsauce.com/v2/tickets/checkin_ids/#{event_id}")
-end
-
   def archive_events(time_range: nil, num_threads: 4)
     puts "Archiving events for time range: #{time_range}"
 
-    start_before = nil
-    start_after = nil
-    case time_range
-    when 'current'
-      start_after =
-        # Now minus one day.
-        (Time.now - 86400).strftime('%Y-%m-%d')
-      start_before =
-        # Now plus two days.
-        (Time.now + 86400 * 2).strftime('%Y-%m-%d')
-    when 'upcoming'
-      start_after =
-        # Now minus one day.
-        (Time.now - 86400).strftime('%Y-%m-%d')
-    when 'recent'
-      start_after =
-        # Now minus 30 days.
-        (Time.now - 86400 * 30).strftime('%Y-%m-%d')
-      start_before =
-        # Now minus one day.
-        (Time.now - 86400).strftime('%Y-%m-%d')
-    when 'last-90-days'
-      start_after =
-        # Now minus 90 days.
-        (Time.now - 86400 * 120).strftime('%Y-%m-%d')
-      start_before =
-        # Now minus 30 days.
-        (Time.now - 86400 * 90).strftime('%Y-%m-%d')
-    end
-
-    events = fetch_events(
-      start_before: start_before,
-      start_after: start_after)
+    events = fetch_events_by_time_range(time_range: time_range)
 
     puts "Archiving #{events.length} events."
 
@@ -227,14 +149,45 @@ end
   end
 
   def generate_file_path(event:, table_name:)
-    location = url_safe_name(event['Event']['location'])
+    location = url_safe_name(event['Event']['location_name'])
     start = DateTime.parse(event['Event']['start'])
     
     year = start.year.to_s
     month_name = Date::MONTHNAMES[start.month]
     day_number = start.day.to_s.rjust(2, '0')
+    event_name = url_safe_name(event['Event']['name'])
     
-    "#{table_name}/venue=#{location}/year=#{year}/month=#{month_name}/day=#{day_number}/"
+    "#{table_name}/#{location}/#{year}/#{month_name}/#{day_number}/#{event_name}.json"
+  end
+
+  def fetch_events_by_time_range(time_range: nil)
+    start_before = nil
+    start_after = nil
+    case time_range
+    when 'current'
+      start_after =
+        # Now minus one day.
+        (Time.now - 86400).strftime('%Y-%m-%d')
+      start_before =
+        # Now plus two days.
+        (Time.now + 86400 * 2).strftime('%Y-%m-%d')
+    when 'upcoming'
+      start_after =
+        # Now minus one day.
+        (Time.now - 86400).strftime('%Y-%m-%d')
+    when 'recent'
+      start_after =
+        # Now minus 30 days.
+        (Time.now - 86400 * 30).strftime('%Y-%m-%d')
+      start_before =
+        # Now minus one day.
+        (Time.now - 86400).strftime('%Y-%m-%d')
+    end
+
+    events = fetch_events(
+      start_before: start_before,
+      start_after: start_after)
+    events
   end
 
   def athena_partitions(event:)
