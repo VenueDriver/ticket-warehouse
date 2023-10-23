@@ -36,7 +36,7 @@ export class TicketWarehouseStack extends cdk.Stack {
           ],
         }
       }),
-      handler: 'handler.lambda_handler',
+      handler: 'Ticketsauce-API-ETL-handler.lambda_handler',
       environment: {
         'BUCKET_NAME': ticketWarehouseBucket.bucketName,
         'TICKETSAUCE_CLIENT_ID': process.env.TICKETSAUCE_CLIENT_ID || '',
@@ -82,7 +82,47 @@ export class TicketWarehouseStack extends cdk.Stack {
       })
     }));
 
-    // 4. Set up AWS Glue to make the data queryable.
+    // 4. Create a separate Lambda function to trigger the Glue crawler.
+    // (It's too slow and expensive to run it every time the data updates.)
+    const glueCrawlerLambda = new Function(this, 'GlueCrawlerLambdaFunction', {
+      runtime: Runtime.RUBY_3_2,
+      code: Code.fromAsset('lambda_src', {
+        bundling: {
+          image: Runtime.RUBY_3_2.bundlingImage,
+          command: [
+            'bash', '-c', [
+              'bundle install --path /asset-output/vendor/bundle',
+              'cp -au . /asset-output/'
+            ].join(' && ')
+          ],
+        }
+      }),
+      handler: 'Glue-crawler-handler.lambda_handler',
+      environment: {
+        'GLUE_CRAWLER_NAME': 'YOUR_GLUE_CRAWLER_NAME'
+      },
+      timeout: cdk.Duration.minutes(5),
+      memorySize: 1024,
+    });
+    
+    // Give this Lambda function permission to start the Glue Crawler
+    glueCrawlerLambda.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['glue:StartCrawler'],
+      resources: ['*']
+    }));
+    
+    // 5. Set up EventBridge to trigger the Glue Crawler Lambda function once a day
+    
+    const dailyGlueCrawlerRule = new events.Rule(this, 'DailyGlueCrawlerTrigger', {
+      schedule: events.Schedule.cron({ 
+        minute: '0', 
+        hour: '0' 
+      })  // This will run at 12:00 AM daily
+    });
+    
+    dailyGlueCrawlerRule.addTarget(new targets.LambdaFunction(glueCrawlerLambda));
+    
+    // 6. Set up AWS Glue to make the data queryable.
     // Create or identify the role
     const glueCrawlerRole = new Role(this, 'GlueCrawlerRole', {
       assumedBy: new ServicePrincipal('glue.amazonaws.com'),

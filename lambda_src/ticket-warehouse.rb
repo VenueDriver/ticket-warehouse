@@ -23,6 +23,13 @@ class TicketWarehouse
     @s3 = Aws::S3::Resource.new(region: 'us-east-1')
     @athena = AthenaManager.new
     @bucket_name = ENV['BUCKET_NAME']
+    @tables = [
+      'ticket_warehouse_events',
+      'ticket_warehouse_orders',
+      'ticket_warehouse_tickets',
+      'ticket_warehouse_checkin_ids'
+    ]
+    @existing_athena_partitions = nil
   end
 
   def authenticate!
@@ -97,6 +104,13 @@ end
       start_before =
         # Now minus one day.
         (Time.now - 86400).strftime('%Y-%m-%d')
+    when 'last-90-days'
+      start_after =
+        # Now minus 90 days.
+        (Time.now - 86400 * 120).strftime('%Y-%m-%d')
+      start_before =
+        # Now minus 30 days.
+        (Time.now - 86400 * 90).strftime('%Y-%m-%d')
     end
 
     events = fetch_events(
@@ -169,6 +183,25 @@ end
           )
 
           puts "Archived #{checkin_ids.count} checkin IDs for event #{event['Event']['name']}"
+
+          # Update the Athena partitions if necessary.
+          puts 'Existing partition count per table (first table): ' +
+            existing_athena_partitions.count.to_s
+          updated_partitions = false
+          partition = athena_partitions(event: event).first
+          raw_partition_name = partition.match(/^[^\/]+\/(.*)\/$/)[1]
+          unless existing_athena_partitions.include?(raw_partition_name)
+            puts "Creating Athena partition in all four tables: #{raw_partition_name}"
+            @tables.each do |table_name|
+              query_string = partition.match(%r{venue=(?<venue>[^/]+)/year=(?<year>\d+)/month=(?<month>\w+)/day=(?<day>\d+)/}) do |m|
+                month_number = Date::MONTHNAMES.index(m[:month])
+                "ALTER TABLE #{table_name} ADD PARTITION (venue = '#{m[:venue]}', year = '#{m[:year]}', month = '#{month_number}', day = '#{m[:day]}');"
+              end
+              @athena.start_query(query_string: query_string)
+            end
+            updated_partitions = true
+          end
+          puts "Updated partition count: #{existing_athena_partitions(memoize:false).count}" if updated_partitions
         rescue APINoDataError => error
           puts "No orders for event #{event['Event']['name']}"
         rescue => error
@@ -179,6 +212,7 @@ end
           if stop_due_to_error.true?
             puts "Stopping due to error..."
             pool.kill
+            exit
           end
         end
       end
@@ -190,18 +224,6 @@ end
 
     puts "Archived #{events.length} events."
 
-    # Trigger the Glue crawlers to update the Athena tables.
-    glue_client = Aws::Glue::Client.new(region: 'us-east-1')
-
-    [
-      'ticket-warehouse-events-crawler',
-      'ticket-warehouse-orders-crawler',
-      'ticket-warehouse-tickets-crawler',
-      'ticket-warehouse-checkin-ids-crawler'
-    ].each do |crawler_name|
-      glue_client.start_crawler(name: crawler_name)
-      puts "Started the Glue crawler: #{crawler_name}"
-    end
   end
 
   def generate_file_path(event:, table_name:)
@@ -213,6 +235,31 @@ end
     day_number = start.day.to_s.rjust(2, '0')
     
     "#{table_name}/venue=#{location}/year=#{year}/month=#{month_name}/day=#{day_number}/"
+  end
+
+  def athena_partitions(event:)
+    @tables.map do |table_name|
+      generate_file_path(event:event, table_name:table_name)
+    end.tap do |partitions|
+      partitions.each do |partition|
+        raw_partition_name = partition.match(/^[^\/]+\/(.*)\/$/)[1]
+      end
+    end
+  end
+
+  # We need to get the existing partitions for a table so that we can
+  # avoid re-creating them.
+  def existing_athena_partitions(memoize:true)
+    if memoize == false
+      @existing_athena_partitions = nil
+    end
+
+    @existing_athena_partitions ||=
+      # WARNING: We assume that the partitions are the same for all tables.
+      @athena.start_query(query_string: <<-QUERY
+          SHOW PARTITIONS #{@tables.first};
+        QUERY
+      )
   end
 
   private

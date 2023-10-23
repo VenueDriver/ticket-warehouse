@@ -68,8 +68,28 @@ class AthenaManager
         if status.eql?('FAILED')
           puts response.query_execution.status.state_change_reason
           puts response
+          break
+        else
+          # When it succeeds we need to get the results.
+          response = @client.get_query_results({
+            query_execution_id: query_execution_id
+          })
+          
+          # Initialize an empty array to hold the strings
+          strings_list = []
+          
+          # Iterate through each row in the result set
+          response.result_set.rows.each do |row|
+            # Iterate through each data item in the row (though there appears to be only one data item per row in your example)
+            row.data.each do |datum|
+              # Extract the var_char_value from the datum and add it to the strings_list
+              strings_list << datum.var_char_value
+            end
+          end
+          
+          # Return the list of strings
+          return strings_list
         end
-        break
       end
       sleep(5)  # Wait for 5 seconds before polling again
     end

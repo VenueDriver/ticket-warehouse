@@ -108,7 +108,7 @@ describe TicketWarehouse do
       client_secret: ENV['TICKETSAUCE_CLIENT_SECRET']
     )
     warehouse.authenticate!
-    warehouse.archive_events(time_range:'current')
+    warehouse.archive_events(time_range:'last-90-days')
   end
 
   describe '#generate_file_path' do
