@@ -41,7 +41,6 @@ class TicketWarehouse
 
     puts "Archiving #{events.length} events."
 
-    num_threads = 4
     pool = Concurrent::ThreadPoolExecutor.new(
       min_threads: num_threads,
       max_threads: num_threads,
