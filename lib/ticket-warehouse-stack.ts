@@ -12,12 +12,16 @@ import { aws_iam as iam } from 'aws-cdk-lib';
 import * as glue from 'aws-cdk-lib/aws-glue';
 import { Role, ServicePrincipal, ManagedPolicy } from 'aws-cdk-lib/aws-iam';
 
+import { TicketWarehouseProps } from './pipeline/ticket-warehouse-deployment-props';
+
 import * as dotenv from 'dotenv';
 dotenv.config();
 
 export class TicketWarehouseStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+  constructor(scope: Construct, id: string, props: TicketWarehouseProps) {
     super(scope, id, props);
+
+    const stage = props.Stage;
 
     // 1. Create the S3 bucket
     const ticketWarehouseBucket = new Bucket(this, 'TicketWarehouseBucket');
@@ -270,4 +274,4 @@ export class TicketWarehouseStack extends cdk.Stack {
 }
 
 const app = new cdk.App();
-new TicketWarehouseStack(app, 'TicketWarehouseStack');
+//new TicketWarehouseStack(app, 'TicketWarehouseStack');
