@@ -9,4 +9,4 @@ cdk.out
 
 .env
 
-*.bundle/config
+**/.bundle/config
