@@ -11,21 +11,26 @@ const app = new cdk.App();
 
 // accounts
 const deployFromAccount = process.env.DEPLOYMENT_AWS_ACCOUNT_ID ? process.env.DEPLOYMENT_AWS_ACCOUNT_ID : ssm.StringParameter.fromStringParameterAttributes(app, `TicketWarehouse-DeploymentAWSAccountId`, {
-  parameterName: `TicketWarehouse-DeploymentAWSAccountId`,
+  parameterName: 'deployment_aws_account_id',
   version: 1
 }).stringValue;
 
 const productionAccount = process.env.PRODUCTION_AWS_ACCOUNT_ID ? process.env.PRODUCTION_AWS_ACCOUNT_ID : ssm.StringParameter.fromStringParameterAttributes(app, `TicketWarehouse-ProductionAWSAccountId`, {
-  parameterName: `TicketWarehouse-ProductionAWSAccountId`,
+  parameterName: 'production_aws_account_id',
   version: 1
 }).stringValue;
 
 const stagingAccount = process.env.STAGING_AWS_ACCOUNT_ID ? process.env.STAGING_AWS_ACCOUNT_ID : ssm.StringParameter.fromStringParameterAttributes(app, `TicketWarehouse-StagingAWSAccountId`, {
-  parameterName: `TicketWarehouse-StagingAWSAccountId`,
+  parameterName: 'staging_aws_account_id',
   version: 1
 }).stringValue;
 
-new TicketWarehousePipelineStack(app, 'absences-to-hotschedules-pipeline-staging', {
+const developmentAccount = process.env.DEVELOPMENT_AWS_ACCOUNT_ID ? process.env.DEVELOPMENT_AWS_ACCOUNT_ID : ssm.StringParameter.fromStringParameterAttributes(app, `TicketWarehouse-DevelopmentAWSAccountId`, {
+  parameterName: 'development_aws_account_id',
+  version: 1
+}).stringValue;
+
+new TicketWarehousePipelineStack(app, 'ticket-warehouse-pipeline-staging', {
   // where the pipeline will run
   env: { account: deployFromAccount, region: 'us-east-1' },
   Stage: 'staging',
@@ -34,11 +39,20 @@ new TicketWarehousePipelineStack(app, 'absences-to-hotschedules-pipeline-staging
   DeploymentRegion: 'us-east-1'
 });
 
-new TicketWarehousePipelineStack(app, 'absences-to-hotschedules-pipeline-production', {
+new TicketWarehousePipelineStack(app, 'ticket-warehouse-pipeline-production', {
   // where the pipeline will run
   env: { account: deployFromAccount, region: 'us-east-1' },
   Stage: 'production',
   // where the cdk app will be deployed
   AccountToDeployTo: productionAccount,
+  DeploymentRegion: 'us-east-1'
+});
+
+new TicketWarehousePipelineStack(app, 'ticket-warehouse-pipeline-development', {
+  // where the pipeline will run
+  env: { account: deployFromAccount, region: 'us-east-1' },
+  Stage: 'development',
+  // where the cdk app will be deployed
+  AccountToDeployTo: developmentAccount,
   DeploymentRegion: 'us-east-1'
 });
