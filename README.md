@@ -1,14 +1,45 @@
-# Welcome to your CDK TypeScript project
+# Ticket Warehouse
 
-This is a blank project for CDK development with TypeScript.
+A serverless data lake for warehousing Ticketsauce API data and analyzing it.
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+Leverages AWS Lambda and Glue for ETL, AWS Athena for querying the data, and Quicksight for BI.  Also uses Lambda functions to generate and schedule custom reports.
 
-## Useful commands
+Uses AWS CDK/CloudFormation for IaC.
 
-* `npm run build`   compile typescript to js
-* `npm run watch`   watch for changes and compile
-* `npm run test`    perform the jest unit tests
-* `cdk deploy`      deploy this stack to your default AWS account/region
-* `cdk diff`        compare deployed stack with current state
-* `cdk synth`       emits the synthesized CloudFormation template
+## Setup
+
+### Step 1: Set up Quicksight in the AWS account.
+
+You might want to connect this to Active Directory for SSO or something for user management, but it needs to be done separately and manually.
+
+### Step 2: Use CDK/CloudFormation to create the serverles resources
+
+    `cdk bootstrap`
+    `cdk deploy`
+
+
+### Step 3: Use the CLI management script to create Quicksight analyses
+
+Quicksight data sources, data sets and analyses must be set up using the management script.
+
+## Management
+
+You can use the `ticket-warhouse` CLI tool to manage the data lake:
+
+    bundle exec ruby ticket-warehouse.rb help
+
+### Manually run ETL on any given time range
+
+    bundle exec ruby ticket-warehouse.rb etl --time-range=current
+    bundle exec ruby ticket-warehouse.rb etl --time-range=upcoming
+    bundle exec ruby ticket-warehouse.rb etl --time-range=all
+
+### Reset whole data lake
+
+This will re-run ETL, then remove the Athena tables, then re-run the Glue crawler to recreate the Athena tables:
+
+    bundle exec ruby ticket-warehouse.rb reset
+
+### Run Glue crawlers
+
+    bundle exec ruby ticket-warehouse.rb crawl
