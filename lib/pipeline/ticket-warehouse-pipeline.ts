@@ -20,8 +20,8 @@ export class TicketWarehousePipelineStack extends cdk.Stack {
       version: 1
     }).stringValue;
 
-    const githubRepository = process.env.GITHUB_REPOSITORY ? process.env.GITHUB_REPOSITORY : ssm.StringParameter.fromStringParameterAttributes(this, `TicketWarehouse-GitHubRepository-${props.Stage}`, {
-      parameterName: `TicketWarehouse-GitHubRepository`,
+    const githubRepository = process.env.GITHUB_REPOSITORY ? process.env.GITHUB_REPOSITORY : ssm.StringParameter.fromStringParameterAttributes(this, `ticket-warehouse-github-repository-${props.Stage}`, {
+      parameterName: `ticket_warehouse_github_repository`,
       version: 1
     }).stringValue;
 
