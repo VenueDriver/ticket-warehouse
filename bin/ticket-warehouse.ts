@@ -10,7 +10,7 @@ import { SSM } from 'aws-sdk';
 dotenv.config();
 
 // utility function to get account IDs asynchronously
-async function getAccountId(name: string, fallbackName: string): Promise<string> {
+async function getAccountId(name: string): Promise<string> {
   if (process.env[name]) return process.env[name]!;
 
   const ssmClient = new SSM();
@@ -26,10 +26,10 @@ async function getAccountId(name: string, fallbackName: string): Promise<string>
 async function main() {
   const app = new cdk.App();
 
-  const deployFromAccount = await getAccountId('DEPLOYMENT_AWS_ACCOUNT_ID', 'DeploymentAWSAccountId');
-  const productionAccount = await getAccountId('PRODUCTION_AWS_ACCOUNT_ID', 'ProductionAWSAccountId');
-  const stagingAccount = await getAccountId('STAGING_AWS_ACCOUNT_ID', 'StagingAWSAccountId');
-  const developmentAccount = await getAccountId('DEVELOPMENT_AWS_ACCOUNT_ID', 'DevelopmentAWSAccountId');
+  const deployFromAccount = await getAccountId('deployment_aws_account_id');
+  const productionAccount = await getAccountId('production_aws_account_id');
+  const stagingAccount = await getAccountId('staging_aws_account_id');
+  const developmentAccount = await getAccountId('development_aws_account_id');
 
   class TicketWarehousePipelineStackWrapper extends cdk.Stack {
     constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
