@@ -40,7 +40,6 @@ export class TicketWarehousePipelineStack extends cdk.Stack {
 
           // Install dependencies, build and run cdk synth
           commands: [
-            'cd ticket-warehouse',
             'npm ci && npx audit-ci --high',
             `npx cdk synth ticket-warehouse-pipeline-${props.Stage}`
           ],
