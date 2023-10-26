@@ -15,10 +15,10 @@ async function getAccountId(name: string, fallbackName: string): Promise<string>
 
   const ssmClient = new SSM();
   try {
-    const result = await ssmClient.getParameter({ Name: fallbackName.toLowerCase() }).promise();
+    const result = await ssmClient.getParameter({ Name: name }).promise();
     return result.Parameter?.Value || '';
   } catch (err) {
-    console.error(`Error fetching SSM parameter ${fallbackName}:`, err);
+    console.error(`Error fetching SSM parameter ${name}:`, err);
     return '';
   }
 }
