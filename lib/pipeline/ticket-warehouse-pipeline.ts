@@ -12,7 +12,7 @@ export class TicketWarehousePipelineStack extends cdk.Stack {
     super(scope, id, props);
 
     // constant for pipeline branch
-    const deploymentBranch = props.Stage === 'production' ? 'production' : 'staging';
+    const deploymentBranch = props.Stage;
 
     // if process.env.GITHUB_CONNECTION_ARN exists, use it, otherwise get it from AWS Systems Manager Parameter Store
     const githubConnectionArn = process.env.GITHUB_CONNECTION_ARN ? process.env.GITHUB_CONNECTION_ARN : ssm.StringParameter.fromStringParameterAttributes(this, `TicketWarehouse-GitHubConnectionArn-${props.Stage}`, {
