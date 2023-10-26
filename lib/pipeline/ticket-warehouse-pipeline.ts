@@ -37,7 +37,7 @@ export class TicketWarehousePipelineStack extends cdk.Stack {
             'npm ci && npx audit-ci --high',
             `npx cdk synth ticket-warehouse-pipeline-${props.Stage}`
           ],
-          primaryOutputDirectory: './ticket-warehouse/cdk.out',
+          primaryOutputDirectory: './cdk.out',
         }),
     });
 
