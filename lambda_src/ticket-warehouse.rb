@@ -64,21 +64,31 @@ class TicketWarehouse
           upload_to_s3(
             event: event,
             data: [event],
-            table_name: 'events'
+            table_name: 'ticket_warehouse_events'
           )
 
           # Archive orders for the event.
-          orders = fetch_orders(event: event)
-          archived_tickets_count = 0
-          orders_with_order_details =
-            orders.map do |order|
-              fetch_order_details(order: order)
-            end
-          upload_to_s3(
-            event: event,
-            data: orders_with_order_details,
-            table_name: 'orders'
-          )
+          begin
+            orders = fetch_orders(event: event)
+            archived_tickets_count = 0
+            orders_with_order_details =
+              orders.map do |order|
+                fetch_order_details(order: order)
+              end
+            upload_to_s3(
+              event: event,
+              data: orders_with_order_details,
+              table_name: 'ticket_warehouse_orders'
+            )
+
+          rescue APINoDataError => error
+            puts "No orders for event #{event['Event']['name']}"
+            orders_with_order_details = []
+          rescue => error
+            puts "Error archiving orders for event #{event['Event']['name']}: #{error.message}"
+            puts error.backtrace.join("\n")
+            stop_due_to_error.make_true
+          end
 
           # Archive tickets for the orders for the event.
           tickets_for_orders =
@@ -96,7 +106,7 @@ class TicketWarehouse
           upload_to_s3(
             event: event,
             data: tickets_for_orders,
-            table_name: 'tickets'
+            table_name: 'ticket_warehouse_tickets'
           )
           
           puts "Archived #{orders.count} orders with #{tickets_for_orders.count} tickets for event #{event['Event']['name']}"
@@ -108,7 +118,7 @@ class TicketWarehouse
             # The API gives us just a list of checkin IDs, not JSON data.
             # So, transform it.  Give it a column name: 'ticket_id'.
             data: checkin_ids.map{|id| {'ticket_id' => id} },
-            table_name: 'checkin_ids'
+            table_name: 'ticket_warehouse_checkin_ids'
           )
 
           puts "Archived #{checkin_ids.count} checkin IDs for event #{event['Event']['name']}"
@@ -119,15 +129,17 @@ class TicketWarehouse
           updated_partitions = false
           partition = athena_partitions(event: event).first
           raw_partition_name =
-            partition.match(%r{/(?<venue>[^/]+)/(?<year>\d+)/(?<month>\w+)/(?<day>\d+)/}) do |match|
+            partition.match(%r{venue=(?<venue>[^/]+)/year=(?<year>\d+)/month=(?<month>\w+)/day=(?<day>\d+)/}) do |match|
               "venue=#{match[:venue]}/year=#{match[:year]}/month=#{match[:month]}/day=#{match[:day]}"
             end
+          puts "Existing partitions: #{existing_athena_partitions}" if ENV['DEBUG']
+          puts "Partition: #{partition}" if ENV['DEBUG']
+          puts "Raw partition name: #{raw_partition_name}" if ENV['DEBUG']
           unless existing_athena_partitions.include?(raw_partition_name)
             puts "Creating Athena partition in all four tables: #{raw_partition_name}"
             @tables.each do |table_name|
               query_string = partition.match(%r{venue=(?<venue>[^/]+)/year=(?<year>\d+)/month=(?<month>\w+)/day=(?<day>\d+)/}) do |m|
-                month_number = Date::MONTHNAMES.index(m[:month])
-                "ALTER TABLE #{table_name} ADD PARTITION (venue = '#{m[:venue]}', year = '#{m[:year]}', month = '#{month_number}', day = '#{m[:day]}');"
+                "ALTER TABLE #{table_name} ADD PARTITION (venue = '#{m[:venue]}', year = '#{m[:year]}', month = '#{m[:month]}', day = '#{m[:day]}');"
               end
               puts "Query string: #{query_string}" if ENV['DEBUG']
               @athena.start_query(query_string: query_string)
