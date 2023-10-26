@@ -22,8 +22,8 @@ export class TicketWarehousePipelineStack extends cdk.Stack {
       crossAccountKeys: true,
       dockerEnabledForSynth: true,
       synth: new cdk.pipelines.ShellStep('Synth', {
-        input: cdk.pipelines.CodePipelineSource.connection(githubRepository, deploymentBranch, {
-          connectionArn: githubConnectionArn,
+        input: cdk.pipelines.CodePipelineSource.connection(cdk.Lazy.string({ produce: () => githubRepository }), deploymentBranch, {
+          connectionArn: cdk.Lazy.string({ produce: () => githubConnectionArn }),
         }),
         commands: [
           'npm ci && npx audit-ci --high',
