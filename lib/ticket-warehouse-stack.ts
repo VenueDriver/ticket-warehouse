@@ -266,6 +266,16 @@ export class TicketWarehouseStack extends cdk.Stack {
       name: 'CreateDatabase',
     });
     athenaDatabase.node.addDependency(athenaWorkgroup);
+
+    /////////////
+    // Outputs
+    
+    new cdk.CfnOutput(this, 'BucketNameOutput', {
+      value: ticketWarehouseBucket.bucketName,
+      description: 'The name of the Ticket Warehouse S3 bucket',
+      exportName: 'TicketWarehouseBucketName',
+    });
+
   }
 }
 
