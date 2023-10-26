@@ -1,4 +1,4 @@
-require_relative 'manager/ETL'
+require_relative 'manager/load'
 require_relative 'manager/Athena'
 require_relative 'manager/Glue'
 
@@ -9,11 +9,11 @@ module Manager
   class Core
 
     # Redo ETL.
-    def self.ETL(time_range:'all', threads:4)
+    def self.Load(time_range:'all', threads:4)
       puts "Resetting Ticket Warehouse..."
 
-      puts "  Redoing ETL for time range: \"#{time_range}\"..."
-      Manager::ETL.run(time_range:time_range, threads:threads)
+      puts "  Reloading data for time range: \"#{time_range}\"..."
+      Manager::Load.run(time_range:time_range, threads:threads)
     end
 
     # Crawl the data lake to create Athena tables.
@@ -24,12 +24,12 @@ module Manager
       Manager::Glue.start_crawlers
     end
 
-    # Redo ETL and recreate the Athena tables.
+    # Reload data and recreate the Athena tables.
     def self.reset(threads:4)
       puts "Resetting Ticket Warehouse..."
 
-      puts "  Redoing ETL for all time..."
-      Manager::ETL.run(time_range:'all', threads:threads)
+      puts "  Reloading data for all time..."
+      Manager::Load.run(time_range:'all', threads:threads)
 
       puts "  Dropping Athena tables..."
       Manager::Athena.drop_tables

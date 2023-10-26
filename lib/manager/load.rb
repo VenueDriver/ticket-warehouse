@@ -1,7 +1,7 @@
 require_relative '../../lambda_src/ticket-warehouse'
 
 module Manager
-  class ETL
+  class Load
       
     # Run ETL for the given time period.
     def self.run(time_range:'all', threads:4)

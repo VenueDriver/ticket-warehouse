@@ -24,22 +24,22 @@ Quicksight data sources, data sets and analyses must be set up using the managem
 
 ## Management
 
-You can use the `ticket-warhouse` CLI tool to manage the data lake:
+You can use the `manager.rb` CLI tool to manage the data lake:
 
-    bundle exec ruby ticket-warehouse.rb help
+    bundle exec ruby manager.rb help
 
 ### Manually run ETL on any given time range
 
-    bundle exec ruby ticket-warehouse.rb etl --time-range=current
-    bundle exec ruby ticket-warehouse.rb etl --time-range=upcoming
-    bundle exec ruby ticket-warehouse.rb etl --time-range=all
+    bundle exec ruby manager.rb etl --time-range=current
+    bundle exec ruby manager.rb etl --time-range=upcoming
+    bundle exec ruby manager.rb etl --time-range=all
 
 ### Reset whole data lake
 
 This will re-run ETL, then remove the Athena tables, then re-run the Glue crawler to recreate the Athena tables:
 
-    bundle exec ruby ticket-warehouse.rb reset
+    bundle exec ruby manager.rb reset
 
 ### Run Glue crawlers
 
-    bundle exec ruby ticket-warehouse.rb crawl
+    bundle exec ruby manager.rb crawl
