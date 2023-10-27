@@ -28,18 +28,31 @@ You can use the `manager.rb` CLI tool to manage the data lake:
 
     bundle exec ruby manager.rb help
 
-### Manually run ETL on any given time range
+The tool supports these basic actions:
 
-    bundle exec ruby manager.rb etl --time-range=current
-    bundle exec ruby manager.rb etl --time-range=upcoming
-    bundle exec ruby manager.rb etl --time-range=all
+* purge - Delete everything in the S3 bucket and delete the Athena tables.
+* load - Load data from Ticketsauce to S3.
+* crawl - Crawl S3 data and create Athena tables.
+* reset - Purge, load, crawl.
 
-### Reset whole data lake
+### Manually load data for any given time range
 
-This will re-run ETL, then remove the Athena tables, then re-run the Glue crawler to recreate the Athena tables:
-
-    bundle exec ruby manager.rb reset
+    bundle exec ruby manager.rb load --time-range=current
+    bundle exec ruby manager.rb load --time-range=upcoming
+    bundle exec ruby manager.rb load --time-range=all
 
 ### Run Glue crawlers
 
     bundle exec ruby manager.rb crawl
+
+### Purge whole data lake
+
+Delete the contents of the S3 bucket and remove all derived Athena tables for this environment:
+
+    bundle exec ruby manager.rb purge
+
+### Reset whole data lake
+
+This will purge, then load, then crawl:
+
+    bundle exec ruby manager.rb reset

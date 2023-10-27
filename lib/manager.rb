@@ -1,6 +1,7 @@
 require_relative 'manager/load'
 require_relative 'manager/Athena'
 require_relative 'manager/Glue'
+require_relative 'manager/S3'
 
 require 'dotenv'
 Dotenv.load('.env')
@@ -8,8 +9,14 @@ Dotenv.load('.env')
 module Manager
   class Core
 
-    # Redo ETL.
-    def self.Load(time_range:'all', threads:4)
+    # Purge the S3 bucket and remove the Athena tables.
+    def self.purge(time_range:'all', threads:4)
+      Manager::S3.purge_bucket
+      Manager::Athena.drop_tables
+    end
+
+    # Reload dat from Ticketsauce.
+    def self.load(time_range:'all', threads:4)
       puts "Resetting Ticket Warehouse..."
 
       puts "  Reloading data for time range: \"#{time_range}\"..."

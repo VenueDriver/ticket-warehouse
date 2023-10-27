@@ -17,15 +17,15 @@ Dotenv.load('../.env')
 
 Thread.abort_on_exception = true
 
+class APIError < StandardError
+end
+class APINoDataError < StandardError
+end
+
 class TicketWarehouse
   extend Forwardable
-  def_delegators :@ticketsauce_api, :access_token, :authenticate!, :fetch_events
+  def_delegators :@ticketsauce_api, :authenticate!, :fetch_events
   def_delegators :@ticketsauce_api, :fetch_orders, :fetch_order_details, :fetch_checkin_ids
-
-  class APIError < StandardError
-  end
-  class APINoDataError < StandardError
-  end
 
   def initialize(client_id:, client_secret:)
     @ticketsauce_api = TicketsauceApi.new(client_id: client_id, client_secret: client_secret)
@@ -64,7 +64,7 @@ class TicketWarehouse
           upload_to_s3(
             event: event,
             data: [event],
-            table_name: 'ticket_warehouse_events'
+            table_name: 'events'
           )
 
           # Archive orders for the event.
@@ -78,14 +78,15 @@ class TicketWarehouse
             upload_to_s3(
               event: event,
               data: orders_with_order_details,
-              table_name: 'ticket_warehouse_orders'
+              table_name: 'orders'
             )
 
           rescue APINoDataError => error
             puts "No orders for event #{event['Event']['name']}"
-            orders_with_order_details = []
+            orders = orders_with_order_details = []
           rescue => error
             puts "Error archiving orders for event #{event['Event']['name']}: #{error.message}"
+            puts "Error class: #{error.class}"
             puts error.backtrace.join("\n")
             stop_due_to_error.make_true
           end
@@ -106,7 +107,7 @@ class TicketWarehouse
           upload_to_s3(
             event: event,
             data: tickets_for_orders,
-            table_name: 'ticket_warehouse_tickets'
+            table_name: 'tickets'
           )
           
           puts "Archived #{orders.count} orders with #{tickets_for_orders.count} tickets for event #{event['Event']['name']}"
@@ -118,7 +119,7 @@ class TicketWarehouse
             # The API gives us just a list of checkin IDs, not JSON data.
             # So, transform it.  Give it a column name: 'ticket_id'.
             data: checkin_ids.map{|id| {'ticket_id' => id} },
-            table_name: 'ticket_warehouse_checkin_ids'
+            table_name: 'checkin_ids'
           )
 
           puts "Archived #{checkin_ids.count} checkin IDs for event #{event['Event']['name']}"

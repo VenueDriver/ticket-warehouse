@@ -6,11 +6,6 @@ require 'rest-client'
 class TicketsauceApi
   attr_reader :access_token
 
-  class APIError < StandardError
-  end
-  class APINoDataError < StandardError
-  end
-
   def initialize(client_id:, client_secret:)
     @client_id = client_id
     @client_secret = client_secret
