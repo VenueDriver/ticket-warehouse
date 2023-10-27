@@ -35,7 +35,8 @@ export class TicketWarehousePipelineStack extends cdk.Stack {
           // Install dependencies, build and run cdk synth
           commands: [
             'npm ci && npx audit-ci --high',
-            `npx cdk synth ticket-warehouse-pipeline-${props.Stage}`
+            `npx cdk synth ticket-warehouse-pipeline-${props.Stage}`,
+            `export GITHUB_CONNECTION_ARN=$(aws ssm get-parameter --name "ticket_warehouse_github_connection_arn" --query "Parameter.Value" --output text) && export GITHUB_REPOSITORY=$(aws ssm get-parameter --name "ticket_warehouse_github_repository" --query "Parameter.Value" --output text) && npx cdk synth ticket-warehouse-pipeline-${props.Stage}`
           ],
           primaryOutputDirectory: './cdk.out',
         }),
