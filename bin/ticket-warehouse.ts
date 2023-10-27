@@ -1,67 +1,45 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
-import { Construct } from 'constructs';
 import { TicketWarehousePipelineStack } from '../lib/pipeline/ticket-warehouse-pipeline';
+import * as ssm from 'aws-cdk-lib/aws-ssm';
 
 import * as dotenv from 'dotenv';
-import { SSM } from 'aws-sdk';
-
 dotenv.config();
 
-// utility function to get account IDs asynchronously
-async function getAccountId(name: string): Promise<string> {
-  if (process.env[name]) return process.env[name]!;
+const app = new cdk.App();
 
-  const ssmClient = new SSM();
-  try {
-    const result = await ssmClient.getParameter({ Name: name }).promise();
-    return result.Parameter?.Value || '';
-  } catch (err) {
-    console.error(`Error fetching SSM parameter ${name}:`, err);
-    return '';
-  }
-}
+// accounts
+const deployFromAccount = process.env.DEPLOYMENT_AWS_ACCOUNT_ID ? process.env.DEPLOYMENT_AWS_ACCOUNT_ID : '123456789012';
+const productionAccount = process.env.PRODUCTION_AWS_ACCOUNT_ID ? process.env.PRODUCTION_AWS_ACCOUNT_ID : '123456789012';
+const stagingAccount = process.env.STAGING_AWS_ACCOUNT_ID ? process.env.STAGING_AWS_ACCOUNT_ID : '123456789012';
+const developmentAccount = process.env.DEVELOPMENT_AWS_ACCOUNT_ID ? process.env.DEVELOPMENT_AWS_ACCOUNT_ID : '123456789012';
 
-async function main() {
-  const app = new cdk.App();
+console.log(`deployFromAccount: ${deployFromAccount}`);
 
-  const deployFromAccount = await getAccountId('deployment_aws_account_id');
-  const productionAccount = await getAccountId('production_aws_account_id');
-  const stagingAccount = await getAccountId('staging_aws_account_id');
-  const developmentAccount = await getAccountId('development_aws_account_id');
+new TicketWarehousePipelineStack(app, 'ticket-warehouse-pipeline-staging', {
+  // where the pipeline will run
+  env: { account: deployFromAccount, region: 'us-east-1' },
+  Stage: 'staging',
+  // where the cdk app will be deployed
+  AccountToDeployTo: stagingAccount,
+  DeploymentRegion: 'us-east-1'
+});
 
-  class TicketWarehousePipelineStackWrapper extends cdk.Stack {
-    constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
-      super(scope, id, props);
+new TicketWarehousePipelineStack(app, 'ticket-warehouse-pipeline-production', {
+  // where the pipeline will run
+  env: { account: deployFromAccount, region: 'us-east-1' },
+  Stage: 'production',
+  // where the cdk app will be deployed
+  AccountToDeployTo: productionAccount,
+  DeploymentRegion: 'us-east-1'
+});
 
-      new TicketWarehousePipelineStack(this, 'ticket-warehouse-pipeline-staging', {
-        env: { account: deployFromAccount, region: 'us-east-1' },
-        Stage: 'staging',
-        AccountToDeployTo: stagingAccount,
-        DeploymentRegion: 'us-east-1'
-      });
-
-      new TicketWarehousePipelineStack(this, 'ticket-warehouse-pipeline-production', {
-        env: { account: deployFromAccount, region: 'us-east-1' },
-        Stage: 'production',
-        AccountToDeployTo: productionAccount,
-        DeploymentRegion: 'us-east-1'
-      });
-
-      new TicketWarehousePipelineStack(this, 'ticket-warehouse-pipeline-development', {
-        env: { account: deployFromAccount, region: 'us-east-1' },
-        Stage: 'development',
-        AccountToDeployTo: developmentAccount,
-        DeploymentRegion: 'us-east-1'
-      });
-    }
-  }
-
-  new TicketWarehousePipelineStackWrapper(app, 'TicketWarehousePipelineStackWrapper');
-}
-
-main().catch(err => {
-  console.error('An error occurred:', err);
-  process.exit(1);
+new TicketWarehousePipelineStack(app, 'ticket-warehouse-pipeline-development', {
+  // where the pipeline will run
+  env: { account: deployFromAccount, region: 'us-east-1' },
+  Stage: 'development',
+  // where the cdk app will be deployed
+  AccountToDeployTo: developmentAccount,
+  DeploymentRegion: 'us-east-1'
 });
