@@ -15,9 +15,16 @@ require_relative 'lib/ticketsauce_api.rb'
 require 'dotenv'
 Dotenv.load('../.env')
 
+Thread.abort_on_exception = true
+
+class APIError < StandardError
+end
+class APINoDataError < StandardError
+end
+
 class TicketWarehouse
   extend Forwardable
-  def_delegators :@ticketsauce_api, :access_token, :authenticate!, :fetch_events
+  def_delegators :@ticketsauce_api, :authenticate!, :fetch_events
   def_delegators :@ticketsauce_api, :fetch_orders, :fetch_order_details, :fetch_checkin_ids
 
   def initialize(client_id:, client_secret:)
@@ -40,6 +47,7 @@ class TicketWarehouse
     events = fetch_events_by_time_range(time_range: time_range)
 
     puts "Archiving #{events.length} events."
+    puts "Thread pool size: #{num_threads}"
 
     pool = Concurrent::ThreadPoolExecutor.new(
       min_threads: num_threads,
@@ -50,7 +58,7 @@ class TicketWarehouse
 
     stop_due_to_error = Concurrent::AtomicBoolean.new(false)
     events.each do |event|
-      pool.post do
+      # pool.post do
         begin
           # Archive the event.
           upload_to_s3(
@@ -60,17 +68,28 @@ class TicketWarehouse
           )
 
           # Archive orders for the event.
-          orders = fetch_orders(event: event)
-          archived_tickets_count = 0
-          orders_with_order_details =
-            orders.map do |order|
-              fetch_order_details(order: order)
-            end
-          upload_to_s3(
-            event: event,
-            data: orders_with_order_details,
-            table_name: 'orders'
-          )
+          begin
+            orders = fetch_orders(event: event)
+            archived_tickets_count = 0
+            orders_with_order_details =
+              orders.map do |order|
+                fetch_order_details(order: order)
+              end
+            upload_to_s3(
+              event: event,
+              data: orders_with_order_details,
+              table_name: 'orders'
+            )
+
+          rescue APINoDataError => error
+            puts "No orders for event #{event['Event']['name']}"
+            orders = orders_with_order_details = []
+          rescue => error
+            puts "Error archiving orders for event #{event['Event']['name']}: #{error.message}"
+            puts "Error class: #{error.class}"
+            puts error.backtrace.join("\n")
+            stop_due_to_error.make_true
+          end
 
           # Archive tickets for the orders for the event.
           tickets_for_orders =
@@ -110,14 +129,20 @@ class TicketWarehouse
             existing_athena_partitions.count.to_s
           updated_partitions = false
           partition = athena_partitions(event: event).first
-          raw_partition_name = partition.match(/^[^\/]+\/(.*)\/$/)[1]
+          raw_partition_name =
+            partition.match(%r{venue=(?<venue>[^/]+)/year=(?<year>\d+)/month=(?<month>\w+)/day=(?<day>\d+)/}) do |match|
+              "venue=#{match[:venue]}/year=#{match[:year]}/month=#{match[:month]}/day=#{match[:day]}"
+            end
+          puts "Existing partitions: #{existing_athena_partitions}" if ENV['DEBUG']
+          puts "Partition: #{partition}" if ENV['DEBUG']
+          puts "Raw partition name: #{raw_partition_name}" if ENV['DEBUG']
           unless existing_athena_partitions.include?(raw_partition_name)
             puts "Creating Athena partition in all four tables: #{raw_partition_name}"
             @tables.each do |table_name|
               query_string = partition.match(%r{venue=(?<venue>[^/]+)/year=(?<year>\d+)/month=(?<month>\w+)/day=(?<day>\d+)/}) do |m|
-                month_number = Date::MONTHNAMES.index(m[:month])
-                "ALTER TABLE #{table_name} ADD PARTITION (venue = '#{m[:venue]}', year = '#{m[:year]}', month = '#{month_number}', day = '#{m[:day]}');"
+                "ALTER TABLE #{table_name} ADD PARTITION (venue = '#{m[:venue]}', year = '#{m[:year]}', month = '#{m[:month]}', day = '#{m[:day]}');"
               end
+              puts "Query string: #{query_string}" if ENV['DEBUG']
               @athena.start_query(query_string: query_string)
             end
             updated_partitions = true
@@ -133,10 +158,10 @@ class TicketWarehouse
           if stop_due_to_error.true?
             puts "Stopping due to error..."
             pool.kill
-            exit
+            exit(1)
           end
         end
-      end
+      # end
     end
 
     pool.shutdown
@@ -148,7 +173,8 @@ class TicketWarehouse
   end
 
   def generate_file_path(event:, table_name:)
-    location = url_safe_name(event['Event']['location_name'])
+    puts "Generating file path for event #{event['Event']['name']} and table #{table_name}" if ENV['DEBUG']
+    location = url_safe_name(event['Event']['organization_name'])
     start = DateTime.parse(event['Event']['start'])
     
     year = start.year.to_s
@@ -156,7 +182,7 @@ class TicketWarehouse
     day_number = start.day.to_s.rjust(2, '0')
     event_name = url_safe_name(event['Event']['name'])
     
-    "#{table_name}/#{location}/#{year}/#{month_name}/#{day_number}/#{event_name}.json"
+    "#{table_name}/venue=#{location}/year=#{year}/month=#{month_name}/day=#{day_number}/"
   end
 
   def fetch_events_by_time_range(time_range: nil)
@@ -194,7 +220,7 @@ class TicketWarehouse
       generate_file_path(event:event, table_name:table_name)
     end.tap do |partitions|
       partitions.each do |partition|
-        raw_partition_name = partition.match(/^[^\/]+\/(.*)\/$/)[1]
+        raw_partition_name = partition.match(/^[^\/]+\/(.*)\//)[1]
       end
     end
   end
@@ -211,7 +237,7 @@ class TicketWarehouse
       @athena.start_query(query_string: <<-QUERY
           SHOW PARTITIONS #{@tables.first};
         QUERY
-      )
+      ) || []
   end
 
   private
@@ -225,9 +251,12 @@ class TicketWarehouse
   end
 
   def upload_to_s3(event:, data:, table_name:)
+    puts "Uploading #{data.length} records to #{table_name} on S3..." if ENV['DEBUG']
+
     event_name = url_safe_name(event['Event']['name'])
     file_path = generate_file_path(event:event, table_name:table_name) +
       "#{url_safe_name(event_name)}.json"
+
     puts "Archiving #{table_name} for event #{event_name} to S3 at file path: #{file_path}"
     
     s3_object = @s3.bucket(@bucket_name).object(file_path)
