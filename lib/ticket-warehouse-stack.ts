@@ -12,18 +12,22 @@ import { aws_iam as iam } from 'aws-cdk-lib';
 import * as glue from 'aws-cdk-lib/aws-glue';
 import { Role, ServicePrincipal, ManagedPolicy } from 'aws-cdk-lib/aws-iam';
 
+import { TicketWarehouseProps } from './pipeline/ticket-warehouse-deployment-props';
+
 import * as dotenv from 'dotenv';
 dotenv.config();
 
 export class TicketWarehouseStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+  constructor(scope: Construct, id: string, props: TicketWarehouseProps) {
     super(scope, id, props);
 
+    const stage = props.Stage;
+
     // 1. Create the S3 bucket
-    const ticketWarehouseBucket = new Bucket(this, 'TicketWarehouseBucket');
+    const ticketWarehouseBucket = new Bucket(this, `TicketWarehouseBucket-${stage}`);
 
     // 2. Create a Ruby 3.2 Lambda function
-    const ticketLambda = new Function(this, 'TicketLambdaFunction', {
+    const ticketLambda = new Function(this, `TicketLambdaFunction-${stage}`, {
       runtime: Runtime.RUBY_3_2,
       code: Code.fromAsset('lambda_src', {
         bundling: {
@@ -64,7 +68,7 @@ export class TicketWarehouseStack extends cdk.Stack {
     }));
 
     // 3. Set up EventBridge to trigger the Lambda function periodically.
-    const ruleForUpcomingEvents = new events.Rule(this, 'RuleForUpcoming', {
+    const ruleForUpcomingEvents = new events.Rule(this, `RuleForUpcoming-${stage}`, {
       schedule: events.Schedule.rate(cdk.Duration.hours(1))
     });
     ruleForUpcomingEvents.addTarget(new targets.LambdaFunction(ticketLambda, {
@@ -73,7 +77,7 @@ export class TicketWarehouseStack extends cdk.Stack {
       })
     }));
     
-    const ruleForCurrentEvents = new events.Rule(this, 'RuleForCurrent', {
+    const ruleForCurrentEvents = new events.Rule(this, `RuleForCurrent-${stage}`, {
       schedule: events.Schedule.rate(cdk.Duration.minutes(5))
     });
     ruleForCurrentEvents.addTarget(new targets.LambdaFunction(ticketLambda, {
@@ -84,7 +88,7 @@ export class TicketWarehouseStack extends cdk.Stack {
 
     // 4. Create a separate Lambda function to trigger the Glue crawler.
     // (It's too slow and expensive to run it every time the data updates.)
-    const glueCrawlerLambda = new Function(this, 'GlueCrawlerLambdaFunction', {
+    const glueCrawlerLambda = new Function(this, `GlueCrawlerLambdaFunction-${stage}`, {
       runtime: Runtime.RUBY_3_2,
       code: Code.fromAsset('lambda_src', {
         bundling: {
@@ -113,7 +117,7 @@ export class TicketWarehouseStack extends cdk.Stack {
     
     // 5. Set up EventBridge to trigger the Glue Crawler Lambda function once a day
     
-    const dailyGlueCrawlerRule = new events.Rule(this, 'DailyGlueCrawlerTrigger', {
+    const dailyGlueCrawlerRule = new events.Rule(this, `DailyGlueCrawlerTrigger-${stage}`, {
       schedule: events.Schedule.cron({ 
         minute: '0', 
         hour: '0' 
@@ -124,7 +128,7 @@ export class TicketWarehouseStack extends cdk.Stack {
     
     // 6. Set up AWS Glue to make the data queryable.
     // Create or identify the role
-    const glueCrawlerRole = new Role(this, 'GlueCrawlerRole', {
+    const glueCrawlerRole = new Role(this, `GlueCrawlerRole-${stage}`, {
       assumedBy: new ServicePrincipal('glue.amazonaws.com'),
     });
     
@@ -157,16 +161,62 @@ export class TicketWarehouseStack extends cdk.Stack {
       actions: ['s3:GetObject', 's3:ListBucket'],
       resources: [ticketWarehouseBucket.bucketArn, `${ticketWarehouseBucket.bucketArn}/*`]
     }));
+
+    const queryResultsSubfolder = 'athena-query-results/';
+    const athenaRole = new iam.Role(this, `AthenaExecutionRole-${stage}`, {
+      assumedBy: new iam.ServicePrincipal('athena.amazonaws.com'),
+      inlinePolicies: {
+        AthenaS3Access: new iam.PolicyDocument({
+          statements: [
+            new iam.PolicyStatement({
+              actions: [
+                "s3:GetObject",
+                "s3:PutObject",
+                "s3:ListBucket",
+                "s3:GetBucketLocation"
+              ],
+              resources: [ticketWarehouseBucket.bucketArn, `${ticketWarehouseBucket.bucketArn}/*`]
+            }),
+          ],
+        }),
+      },
+    });
+    const athenaWorkgroup = new athena.CfnWorkGroup(this, `AthenaWorkGroup-${stage}`, {
+      name: `TicketWarehouse-${stage}`,
+      description: 'For the Ticketsauce ticket warehouse',
+      recursiveDeleteOption: false,
+      state: 'ENABLED',
+      workGroupConfiguration: {
+        enforceWorkGroupConfiguration: false,
+        executionRole: athenaRole.roleArn,
+        resultConfiguration: {
+          outputLocation: `${ticketWarehouseBucket.s3UrlForObject(queryResultsSubfolder)}`, 
+          encryptionConfiguration: {
+            encryptionOption: 'SSE_S3' // Server-side encryption using S3-managed keys
+          }
+        },
+        publishCloudWatchMetricsEnabled: false
+      }
+    });
     
-    const eventsCrawler = new glue.CfnCrawler(this, 'EventsCrawler', {
-      databaseName: 'ticket_warehouse',
+    // Create Athena database
+    const athenaDatabase = new athena.CfnNamedQuery(this, `CreateDatabase-${stage}`, {
+      database: `ticket_warehouse-${stage}`,
+      workGroup: athenaWorkgroup.name,
+      queryString: `CREATE DATABASE ticket_warehouse-${stage}`,
+      name: 'CreateDatabase',
+    });
+    athenaDatabase.node.addDependency(athenaWorkgroup);
+    
+    const eventsCrawler = new glue.CfnCrawler(this, `EventsCrawler-${stage}`, {
+      databaseName: athenaDatabase.database,
       role: glueCrawlerRole.roleArn,
       targets: {
         s3Targets: [{
           path: `s3://${ticketWarehouseBucket.bucketName}/events/`
         }]
       },
-      name: 'ticket-warehouse-events-crawler',
+      name: `ticket-warehouse-events-crawler-${stage}`,
       tablePrefix: 'ticket_warehouse_',
       schemaChangePolicy: {
         deleteBehavior: 'LOG'
@@ -174,15 +224,15 @@ export class TicketWarehouseStack extends cdk.Stack {
     });
 
     // Add a crawler for Orders data
-    const ordersCrawler = new glue.CfnCrawler(this, 'OrdersCrawler', {
-      databaseName: 'ticket_warehouse',
+    const ordersCrawler = new glue.CfnCrawler(this, `OrdersCrawler-${stage}`, {
+      databaseName: athenaDatabase.database,
       role: glueCrawlerRole.roleArn,
       targets: {
         s3Targets: [{
           path: `s3://${ticketWarehouseBucket.bucketName}/orders/`
         }]
       },
-      name: 'ticket-warehouse-orders-crawler',
+      name: `ticket-warehouse-orders-crawler-${stage}`,
       tablePrefix: 'ticket_warehouse_',
       schemaChangePolicy: {
         deleteBehavior: 'LOG'
@@ -190,15 +240,15 @@ export class TicketWarehouseStack extends cdk.Stack {
     });
     
     // Add a crawler for Tickets data
-    const ticketsCrawler = new glue.CfnCrawler(this, 'TicketsCrawler', {
-      databaseName: 'ticket_warehouse',
+    const ticketsCrawler = new glue.CfnCrawler(this, `TicketsCrawler-${stage}`, {
+      databaseName: athenaDatabase.database,
       role: glueCrawlerRole.roleArn,
       targets: {
         s3Targets: [{
           path: `s3://${ticketWarehouseBucket.bucketName}/tickets/`
         }]
       },
-      name: 'ticket-warehouse-tickets-crawler',
+      name: `ticket-warehouse-tickets-crawler-${stage}`,
       tablePrefix: 'ticket_warehouse_',
       schemaChangePolicy: {
         deleteBehavior: 'LOG'
@@ -206,15 +256,15 @@ export class TicketWarehouseStack extends cdk.Stack {
     });
 
     // Add a crawler for Checkin IDs data
-    const checkinIDsCrawler = new glue.CfnCrawler(this, 'CheckinIDsCrawler', {
-      databaseName: 'ticket_warehouse',
+    const checkinIDsCrawler = new glue.CfnCrawler(this, `CheckinIDsCrawler-${stage}`, {
+      databaseName: athenaDatabase.database,
       role: glueCrawlerRole.roleArn,
       targets: {
         s3Targets: [{
           path: `s3://${ticketWarehouseBucket.bucketName}/checkin_ids/`
         }]
       },
-      name: 'ticket-warehouse-checkin-ids-crawler',
+      name: `ticket-warehouse-checkin-ids-crawler-${stage}`,
       tablePrefix: 'ticket_warehouse_',
       schemaChangePolicy: {
         deleteBehavior: 'LOG'
@@ -280,4 +330,4 @@ export class TicketWarehouseStack extends cdk.Stack {
 }
 
 const app = new cdk.App();
-new TicketWarehouseStack(app, 'TicketWarehouseStack');
+//new TicketWarehouseStack(app, 'TicketWarehouseStack');
