@@ -35,8 +35,13 @@ export class TicketWarehousePipelineStack extends cdk.Stack {
           // Install dependencies, build and run cdk synth
           commands: [
             'npm ci && npx audit-ci --high',
-            `npx cdk synth ticket-warehouse-pipeline-${props.Stage}`,
-            `export GITHUB_CONNECTION_ARN=$(aws ssm get-parameter --name "ticket_warehouse_github_connection_arn" --query "Parameter.Value" --output text) && export GITHUB_REPOSITORY=$(aws ssm get-parameter --name "ticket_warehouse_github_repository" --query "Parameter.Value" --output text) && npx cdk synth ticket-warehouse-pipeline-${props.Stage}`
+            `export GITHUB_CONNECTION_ARN=$(aws ssm get-parameter --name "ticket_warehouse_github_connection_arn" --query "Parameter.Value" --output text) && \
+            export GITHUB_REPOSITORY=$(aws ssm get-parameter --name "ticket_warehouse_github_repository" --query "Parameter.Value" --output text) && \
+            export DEPLOYMENT_AWS_ACCOUNT_ID=$(aws ssm get-parameter --name "deployment_aws_account_id" --query "Parameter.Value" --output text) && \
+            export PRODUCTION_AWS_ACCOUNT_ID=$(aws ssm get-parameter --name "production_aws_account_id" --query "Parameter.Value" --output text) && \
+            export STAGING_AWS_ACCOUNT_ID=$(aws ssm get-parameter --name "staging_aws_account_id" --query "Parameter.Value" --output text) && \
+            export DEVELOPMENT_AWS_ACCOUNT_ID=$(aws ssm get-parameter --name "development_aws_account_id" --query "Parameter.Value" --output text) && \
+            npx cdk synth ticket-warehouse-pipeline-${props.Stage}`
           ],
           primaryOutputDirectory: './cdk.out',
         }),
