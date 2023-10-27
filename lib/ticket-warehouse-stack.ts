@@ -270,52 +270,6 @@ export class TicketWarehouseStack extends cdk.Stack {
         deleteBehavior: 'LOG'
       }
     });
-    
-    const queryResultsSubfolder = 'athena-query-results/';
-    const athenaRole = new iam.Role(this, 'AthenaExecutionRole', {
-      assumedBy: new iam.ServicePrincipal('athena.amazonaws.com'),
-      inlinePolicies: {
-        AthenaS3Access: new iam.PolicyDocument({
-          statements: [
-            new iam.PolicyStatement({
-              actions: [
-                "s3:GetObject",
-                "s3:PutObject",
-                "s3:ListBucket",
-                "s3:GetBucketLocation"
-              ],
-              resources: [ticketWarehouseBucket.bucketArn, `${ticketWarehouseBucket.bucketArn}/*`]
-            }),
-          ],
-        }),
-      },
-    });
-    const athenaWorkgroup = new athena.CfnWorkGroup(this, 'AthenaWorkGroup', {
-      name: 'TicketWarehouse',
-      description: 'For the Ticketsauce ticket warehouse',
-      recursiveDeleteOption: false,
-      state: 'ENABLED',
-      workGroupConfiguration: {
-        enforceWorkGroupConfiguration: false,
-        executionRole: athenaRole.roleArn,
-        resultConfiguration: {
-          outputLocation: `${ticketWarehouseBucket.s3UrlForObject(queryResultsSubfolder)}`, 
-          encryptionConfiguration: {
-            encryptionOption: 'SSE_S3' // Server-side encryption using S3-managed keys
-          }
-        },
-        publishCloudWatchMetricsEnabled: false
-      }
-    });
-    
-    // Create Athena database
-    const athenaDatabase = new athena.CfnNamedQuery(this, 'CreateDatabase', {
-      database: 'ticket_warehouse',
-      workGroup: 'TicketWarehouse',
-      queryString: 'CREATE DATABASE ticket_warehouse',
-      name: 'CreateDatabase',
-    });
-    athenaDatabase.node.addDependency(athenaWorkgroup);
 
     /////////////
     // Outputs
