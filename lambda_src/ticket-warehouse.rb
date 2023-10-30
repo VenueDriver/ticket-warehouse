@@ -24,7 +24,7 @@ end
 
 class TicketWarehouse
   extend Forwardable
-  def_delegators :@ticketsauce_api, :access_token, :authenticate!, :fetch_events
+  def_delegators :@ticketsauce_api, :authenticate!, :fetch_events
   def_delegators :@ticketsauce_api, :fetch_orders, :fetch_order_details, :fetch_checkin_ids
 
   def initialize(client_id:, client_secret:)
