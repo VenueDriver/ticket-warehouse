@@ -1,6 +1,7 @@
 # A Thor CLI for managing the Ticket Warehouse.
 
 require 'thor'
+require_relative 'lib/quicksight'
 require_relative 'lib/manager'
 
 module Manager
@@ -29,6 +30,9 @@ module Manager
     def reset
       Manager::Core.reset(time_range:options[:time_range], threads:options[:threads])
     end
+
+    desc "qs", "Manage Quicksight resources."
+    subcommand "qs", Quicksight
 
   end
 end

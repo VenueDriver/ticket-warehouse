@@ -1,6 +1,8 @@
 source 'https://rubygems.org'
 
+gem 'pry', group: :development
 gem 'thor', '~> 1.3'
-gem 'aws-sdk-athena', '~> 1.75'
-gem 'aws-sdk-s3', '~> 1.136'
-gem 'aws-sdk-glue', '~> 1.157'
+
+gem 'aws-sdk-sts', '~> 1.10'
+
+eval File.read('lambda_src/Gemfile'), nil, 'Gemfile'

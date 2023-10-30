@@ -1,6 +1,5 @@
 require 'aws-sdk-s3'
 require 'open3'
-require 'yaml'
 
 module Manager
   class S3

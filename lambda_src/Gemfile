@@ -12,4 +12,6 @@ gem 'rexml', '~> 3.2', '>= 3.2.6'
 gem 'aws-sdk-athena', '~> 1.75'
 gem 'aws-sdk-s3', '~> 1.136'
 gem 'aws-sdk-glue', '~> 1.157'
+gem 'aws-sdk-quicksight', '~> 1.94'
+
 gem 'concurrent-ruby', '~> 1.2', '>= 1.2.2'

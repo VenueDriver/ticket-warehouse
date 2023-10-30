@@ -2,6 +2,7 @@ require_relative 'manager/load'
 require_relative 'manager/Athena'
 require_relative 'manager/Glue'
 require_relative 'manager/S3'
+require_relative 'manager/Quicksight'
 
 require 'dotenv'
 Dotenv.load('.env')
