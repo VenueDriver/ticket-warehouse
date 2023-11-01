@@ -31,8 +31,8 @@ module Manager
       Manager::Core.reset(time_range:options[:time_range], threads:options[:threads])
     end
 
-    desc "qs", "Manage Quicksight resources."
-    subcommand "qs", Quicksight
+    desc "quickight", "Manage Quicksight resources."
+    subcommand "quicksight", Quicksight
 
   end
 end

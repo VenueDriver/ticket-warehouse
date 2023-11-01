@@ -4,8 +4,45 @@ require 'aws-sdk-sts'
 module Manager
   class Quicksight
 
-    def self.sources
-      puts "Creating Quicksight data sources..."
+    def self.purge
+      # Remove all Quicksight resources.
+      puts "Purging Quicksight resources..."
+
+      puts "  Account ID: " + account_id
+      puts "  Principal user: " + admin_user.user_name
+
+      client = Aws::QuickSight::Client.new(region: 'us-east-1')
+
+      resp = client.list_data_sets({
+        aws_account_id: account_id
+      })
+
+      resp.data_set_summaries.each do |data_set|
+        next unless data_set.name =~ /^ticket\-warehouse/
+        puts "  Deleting data set #{data_set.data_set_id}..."
+        client.delete_data_set({
+          aws_account_id: account_id,
+          data_set_id: data_set.data_set_id
+        })
+      end
+
+      resp = client.list_data_sources({
+        aws_account_id: account_id
+      })
+
+      resp.data_sources.each do |data_source|
+        next unless data_source.name =~ /^ticket\_warehouse/
+        puts "  Deleting data source #{data_source.data_source_id}..."
+        client.delete_data_source({
+          aws_account_id: account_id,
+          data_source_id: data_source.data_source_id
+        })
+      end
+
+    end
+
+    def self.source
+      puts "Creating Quicksight data source..."
 
       puts "  Account ID: " + account_id
 
@@ -13,45 +50,44 @@ module Manager
 
       client = Aws::QuickSight::Client.new(region: 'us-east-1')
 
-      [
-        'events',
-        'orders',
-        'tickets',
-        'checkin_ids'
-      ].each do |table_name|
-
-        puts "  Creating data source for table #{table_name}..."
-
-        resp = client.create_data_source({
-          aws_account_id: account_id,
-          data_source_id: "ticket_warehouse_#{table_name}",
-          name: "ticket_warehouse_#{table_name}",
-          type: 'ATHENA',
-          data_source_parameters: {
-            athena_parameters: {
-              work_group: 'TicketWarehouse'
-            }
-          },
-          permissions: [
-            {
-              principal: admin_user.arn,
-              actions: [
-                'quicksight:DescribeDataSource',
-                'quicksight:DescribeDataSourcePermissions',
-                'quicksight:PassDataSource'
-              ]
-            }
-          ],
-          ssl_properties: {
-            disable_ssl: false
+      resp = client.create_data_source({
+        aws_account_id: account_id,
+        data_source_id: "ticket_warehouse",
+        name: "ticket_warehouse",
+        type: 'ATHENA',
+        data_source_parameters: {
+          athena_parameters: {
+            work_group: 'TicketWarehouse'
           }
-        })
+        },
+        permissions: [
+          {
+            principal: admin_user.arn,
+            actions: [
+              'quicksight:DescribeDataSource',
+              'quicksight:DescribeDataSourcePermissions',
+              'quicksight:PassDataSource'
+            ]
+          }
+        ],
+        ssl_properties: {
+          disable_ssl: false
+        }
+      })
 
-        puts "  API response: #{resp.inspect}"
-      rescue Aws::QuickSight::Errors::ResourceExistsException => error
-        puts "  Data source already exists: #{error}"
+      puts "  API response: #{resp.inspect}"
+
+      begin
+        grant_data_source_permissions(
+          data_source_id: "ticket_warehouse",
+          user_arn: admin_user.arn)
+      rescue Aws::QuickSight::Errors::ConflictException => error
+        puts "  Retrying in five seconds after this problem: #{error}"
+        sleep 5
+        retry
       end
-
+    rescue Aws::QuickSight::Errors::ResourceExistsException => error
+      puts "  Data source already exists: #{error}"
     end
 
     def self.datasets
@@ -68,7 +104,7 @@ module Manager
         physical_table_map: {
           name => {
             custom_sql: {
-              data_source_arn: data_source_arn(table_name: 'orders'),
+              data_source_arn: data_source_arn,
               name: name,
               sql_query: <<~SQL,
                 select  tw_orders.venue
@@ -90,10 +126,10 @@ module Manager
                 { :name => "year", :type => "STRING" },
                 { :name => "month", :type => "STRING" },
                 { :name => "day", :type => "STRING" },
-                { :name => "order_id", :type => "STRING" },
-                { :name => "order_status", :type => "STRING" },
-                { :name => "ticket_type_name", :type => "STRING" },
-                { :name => "ticket_type_id", :type => "STRING" }
+                # { :name => "order_id", :type => "STRING" },
+                # { :name => "order_status", :type => "STRING" },
+                # { :name => "ticket_type_name", :type => "STRING" },
+                # { :name => "ticket_type_id", :type => "STRING" }
               ]
             }
           }
@@ -146,12 +182,12 @@ module Manager
           end
     end
 
-    def self.data_source_arn(table_name:)
+    def self.data_source_arn
       client = Aws::QuickSight::Client.new(region: 'us-east-1')
       
       resp = client.describe_data_source({
         aws_account_id: account_id,
-        data_source_id: "ticket_warehouse_#{table_name}"
+        data_source_id: "ticket_warehouse"
       })
       
       resp.data_source.arn.tap do |arn|
@@ -171,17 +207,55 @@ module Manager
           {
             principal: user_arn,
             actions: [
-              "quicksight:DescribeDataSet",
-              "quicksight:DescribeDataSetPermissions",
+              "quicksight:DeleteDataSet",
+              "quicksight:UpdateDataSetPermissions",
+              "quicksight:PutDataSetRefreshProperties",
+              "quicksight:CreateRefreshSchedule",
+              "quicksight:CancelIngestion",
               "quicksight:PassDataSet",
-              "quicksight:DescribeIngestion",
-              "quicksight:ListIngestions"
+              "quicksight:UpdateRefreshSchedule",
+              "quicksight:ListRefreshSchedules",
+              "quicksight:DeleteRefreshSchedule",
+              "quicksight:DescribeDataSetRefreshProperties",
+              "quicksight:DescribeDataSet",
+              "quicksight:CreateIngestion",
+              "quicksight:DescribeRefreshSchedule",
+              "quicksight:ListIngestions",
+              "quicksight:DescribeDataSetPermissions",
+              "quicksight:UpdateDataSet",
+              "quicksight:DeleteDataSetRefreshProperties",
+              "quicksight:DescribeIngestion"
             ]
           }
         ]
       }
       
       response = client.update_data_set_permissions(params)
+      
+      puts response
+    end
+
+    def self.grant_data_source_permissions(data_source_id:, user_arn:)
+      require 'aws-sdk-quicksight'
+      
+      client = Aws::QuickSight::Client.new(region: 'us-east-1')
+      
+      params = {
+        aws_account_id: account_id,
+        data_source_id: data_source_id,
+        grant_permissions: [
+          {
+            principal: user_arn,
+            actions: [
+              "quicksight:DescribeDataSource",
+              "quicksight:DescribeDataSourcePermissions",
+              "quicksight:PassDataSource"
+            ]
+          }
+        ]
+      }
+      
+      response = client.update_data_source_permissions(params)
       
       puts response
     end

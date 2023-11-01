@@ -1,9 +1,14 @@
 module Manager
   class Quicksight < Thor
 
-    desc "sources", "Create Quicksight data sources."
+    desc "purge", "Remove all Quicksight resources."
+    def purge
+      Manager::Quicksight.purge()
+    end
+
+    desc "source", "Create Quicksight data source."
     def sources
-      Manager::Quicksight.sources()
+      Manager::Quicksight.source()
     end
 
     desc "datasets", "Create Quicksight dataset."
