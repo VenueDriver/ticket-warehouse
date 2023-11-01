@@ -89,6 +89,7 @@ class TicketWarehouse
             puts "Error class: #{error.class}"
             puts error.backtrace.join("\n")
             stop_due_to_error.make_true
+            raise error
           end
 
           # Archive tickets for the orders for the event.
