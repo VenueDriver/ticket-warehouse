@@ -35,14 +35,19 @@ class TicketsauceApi
     params[:start_before] = start_before if start_before
     params[:start_after] = start_after if start_after
     
-    query_string = params.empty? ? '' : '?' + URI.encode_www_form(params)
+    query_string = convert_to_query_string(params)
     
     fetch_api_data("https://api.ticketsauce.com/v2/events#{query_string}")
   end
 
-  def fetch_orders(event:)
+  def fetch_orders(event:,  return_line_item_fees: true)
     event_id = event['Event']['id']
-    fetch_api_data("https://api.ticketsauce.com/v2/orders/#{event_id}")
+
+    params = {}
+    params[:return_line_item_fees] = return_line_item_fees if return_line_item_fees
+    query_string = convert_to_query_string(params)
+
+    fetch_api_data("https://api.ticketsauce.com/v2/orders/#{event_id}#{query_string}")
   end
 
   def fetch_order_details(order:)
@@ -53,6 +58,13 @@ class TicketsauceApi
   def fetch_checkin_ids(event:)
     event_id = event['Event']['id']
     fetch_api_data("https://api.ticketsauce.com/v2/tickets/checkin_ids/#{event_id}")
+  end
+
+  private
+
+  def convert_to_query_string(params)
+    query_string = params.empty? ? '' : '?' + URI.encode_www_form(params)
+    query_string
   end
 
 end
