@@ -69,11 +69,13 @@ class TicketWarehouse
 
           # Archive orders for the event.
           begin
-            orders = fetch_orders(event: event)
+            orders = fetch_orders(event: event, return_line_item_fees: true)
             archived_tickets_count = 0
             orders_with_order_details =
               orders.map do |order|
-                fetch_order_details(order: order)
+                fetch_order_details(order: order).merge(
+                    'LineItemFees' => order['LineItemFees']
+                  )
               end
             upload_to_s3(
               event: event,
