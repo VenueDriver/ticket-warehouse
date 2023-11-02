@@ -40,14 +40,34 @@ class TicketsauceApi
     fetch_api_data("https://api.ticketsauce.com/v2/events#{query_string}")
   end
 
-  def fetch_orders(event:,  return_line_item_fees: true)
+  def fetch_orders(event:, return_line_item_fees: true)
     event_id = event['Event']['id']
+    orders = []
+    per_page = 100
+    page = 1
+  
+    loop do
+      params = {
+        return_line_item_fees: return_line_item_fees,
+        per_page: per_page,
+        page: page
+      }
+      query_string = '?' + convert_to_query_string(params)
 
-    params = {}
-    params[:return_line_item_fees] = return_line_item_fees if return_line_item_fees
-    query_string = convert_to_query_string(params)
+      puts "Fetching page #{page} of orders for event #{event['Event']['name']}"
+  
+      response = fetch_api_data("https://api.ticketsauce.com/v2/orders/#{event_id}#{query_string}")
+      orders.concat(response)
 
-    fetch_api_data("https://api.ticketsauce.com/v2/orders/#{event_id}#{query_string}")
+      puts "Found #{response.length} orders for page #{page}"
+      break if response.length < per_page
+  
+      page += 1
+    end
+
+    puts "Found #{orders.length} orders for event #{event['Event']['name']}"
+  
+    orders
   end
 
   def fetch_order_details(order:)
