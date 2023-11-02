@@ -22,6 +22,7 @@ class TicketsauceApi
   end
 
   def fetch_api_data(endpoint_url)
+    puts "Fetching data from #{endpoint_url}"
     response = RestClient.get(endpoint_url, { Authorization: "Bearer #{@access_token}" })
     JSON.parse(response.body).tap do |data|
       raise APINoDataError.new(data['error']) if data.is_a?(Hash) && data['error'].eql?('no_data')
@@ -52,7 +53,7 @@ class TicketsauceApi
         per_page: per_page,
         page: page
       }
-      query_string = '?' + convert_to_query_string(params)
+      query_string = convert_to_query_string(params)
 
       puts "Fetching page #{page} of orders for event #{event['Event']['name']}"
   
@@ -77,8 +78,34 @@ class TicketsauceApi
 
   def fetch_checkin_ids(event:)
     event_id = event['Event']['id']
-    fetch_api_data("https://api.ticketsauce.com/v2/tickets/checkin_ids/#{event_id}")
-  end
+    checkin_ids = []
+    per_page = 5000
+    page = 1
+  
+    loop do
+      params = {
+        per_page: per_page,
+        page: page
+      }
+      query_string = convert_to_query_string(params)
+  
+      puts "Fetching page #{page} of check-in IDs for event #{event['Event']['name']}"
+
+      puts "Query string: #{query_string}"
+  
+      response = fetch_api_data("https://api.ticketsauce.com/v2/tickets/checkin_ids/#{event_id}#{query_string}")
+      checkin_ids.concat(response)
+  
+      puts "Found #{response.length} check-in IDs for page #{page}"
+      break if response.length < per_page
+  
+      page += 1
+    end
+  
+    puts "Found a total of #{checkin_ids.length} check-in IDs for event #{event['Event']['name']}"
+  
+    checkin_ids
+  end  
 
   private
 
