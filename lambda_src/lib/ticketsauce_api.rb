@@ -2,6 +2,7 @@ require 'json'
 require 'pry'
 require 'date'
 require 'rest-client'
+require_relative 'api_errors.rb'
 
 class TicketsauceApi
   attr_reader :access_token

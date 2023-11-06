@@ -9,6 +9,7 @@ require 'forwardable'
 
 require_relative 'athena-manager'
 require_relative 'lib/ticketsauce_api.rb'
+require_relative 'lib/api_errors.rb'
 
 # RestClient.log = STDOUT
 
@@ -16,11 +17,6 @@ require 'dotenv'
 Dotenv.load('../.env')
 
 Thread.abort_on_exception = true
-
-class APIError < StandardError
-end
-class APINoDataError < StandardError
-end
 
 class TicketWarehouse
   extend Forwardable
