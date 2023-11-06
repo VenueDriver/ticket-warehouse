@@ -56,3 +56,9 @@ Delete the contents of the S3 bucket and remove all derived Athena tables for th
 This will purge, then load, then crawl:
 
     bundle exec ruby manager.rb reset
+
+## Runbooks
+
+Tactics.  How to do things.
+
+- [Working with CDK](documentation/runbooks/ticket_warehouse_working_with_cdk.md)
