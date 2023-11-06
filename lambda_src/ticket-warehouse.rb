@@ -71,9 +71,14 @@ class TicketWarehouse
           begin
             orders = fetch_orders(event: event, return_line_item_fees: true)
             archived_tickets_count = 0
+            tickets_for_orders = []
             orders_with_order_details =
               orders.map do |order|
-                fetch_order_details(order: order).merge(
+                order_details = fetch_order_details(order: order)
+
+                tickets_for_orders << order_details['Ticket']
+
+                order_details.merge(
                     'LineItemFees' => order['LineItemFees']
                   )
               end
@@ -82,6 +87,8 @@ class TicketWarehouse
               data: orders_with_order_details,
               table_name: 'orders'
             )
+            puts "HELO?"
+            archive_tickets(event: event, tickets: tickets_for_orders.flatten)
 
           rescue APINoDataError => error
             puts "No orders for event #{event['Event']['name']}"
@@ -172,6 +179,31 @@ class TicketWarehouse
     pool.wait_for_termination
 
     puts "Archived #{events.length} events."
+
+  end
+
+  def archive_tickets(event:, tickets:)
+    puts "Archiving #{tickets.length} tickets for event #{event['Event']['name']}"
+
+    tickets_data = tickets.map do |ticket|
+      {
+        'ticket_type_id'       => ticket['ticket_type_id'],
+        'ticket_type_price_id' => ticket['ticket_type_price_id'],
+        'event_id'             => event['Event']['id'],
+        'ticket_type_name'     => ticket['ticket_type_name'],
+        'ticket_type_price'    => ticket['ticket_type_price']
+      }
+    end
+
+    unique_tickets_data =
+      tickets_data.uniq{|t| [t['ticket_type_id'], t['ticket_type_price_id']]}
+
+    # Upload the ticket details to S3.
+    upload_to_s3(
+      event: event,
+      data: unique_tickets_data,
+      table_name: 'ticket_types'
+    )
 
   end
 

@@ -13,6 +13,7 @@ def lambda_handler(event:, context:)
     'ticket-warehouse-events-crawler',
     'ticket-warehouse-orders-crawler',
     'ticket-warehouse-tickets-crawler',
+    'ticket-warehouse-ticket-types-crawler',
     'ticket-warehouse-checkin-ids-crawler'
   ].each do |crawler_name|
     glue_client.start_crawler(name: crawler_name)

@@ -255,6 +255,22 @@ export class TicketWarehouseStack extends cdk.Stack {
       }
     });
 
+    // Add a crawler for Ticket Types data
+    const ticketTypesCrawler = new glue.CfnCrawler(this, `TicketTypesCrawler-${stage}`, {
+      databaseName: athenaDatabase.database,
+      role: glueCrawlerRole.roleArn,
+      targets: {
+        s3Targets: [{
+          path: `s3://${ticketWarehouseBucket.bucketName}/ticket_types/`
+        }]
+      },
+      name: `ticket-warehouse-ticket-types-crawler-${stage}`,
+      tablePrefix: 'ticket_warehouse_',
+      schemaChangePolicy: {
+        deleteBehavior: 'LOG'
+      }
+    });
+    
     // Add a crawler for Checkin IDs data
     const checkinIDsCrawler = new glue.CfnCrawler(this, `CheckinIDsCrawler-${stage}`, {
       databaseName: athenaDatabase.database,
