@@ -83,10 +83,18 @@ class TicketWarehouse
                   order_details = fetch_order_details(order: order)
   
                   tickets_for_orders << order_details['Ticket']
+
+                  line_item_fees_orig = order['LineItemFees']
+
+                  line_item_transformed = if line_item_fees_orig.nil?
+                    nil
+                  else
+                    line_item_fees_orig.transform_keys{|key| underscore_safe_name(key)}
+                  end
   
                   order_details.merge(
-                      'LineItemFees' => order['LineItemFees']
-                    )
+                    'LineItemFees' => line_item_transformed
+                  ) 
                 end
               upload_to_s3(
                 event: event,
@@ -277,6 +285,10 @@ class TicketWarehouse
 
   def url_safe_name(name)
     name.gsub(/[^0-9A-Za-z]/, '-').squeeze('-').downcase
+  end
+
+  def underscore_safe_name(name)
+    name.gsub(/[^0-9A-Za-z]/, '_').squeeze('_').downcase
   end
 
   def to_ndjson(data)
