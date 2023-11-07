@@ -3,6 +3,7 @@ import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
 import { TicketWarehousePipelineStack } from '../lib/pipeline/ticket-warehouse-pipeline';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
+import { TicketWarehouseStack } from '../lib/ticket-warehouse-stack';
 
 import * as dotenv from 'dotenv';
 dotenv.config();
@@ -40,6 +41,13 @@ new TicketWarehousePipelineStack(app, 'ticket-warehouse-pipeline-development', {
   env: { account: deployFromAccount, region: 'us-east-1' },
   Stage: 'development',
   // where the cdk app will be deployed
+  AccountToDeployTo: developmentAccount,
+  DeploymentRegion: 'us-east-1'
+});
+
+new TicketWarehouseStack(app, 'ticket-warehouse-development-stack', {
+  env: { account: stagingAccount, region: 'us-east-1' },
+  Stage: 'development',
   AccountToDeployTo: developmentAccount,
   DeploymentRegion: 'us-east-1'
 });
