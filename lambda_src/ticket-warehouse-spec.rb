@@ -32,7 +32,7 @@ describe TicketWarehouse do
           'organization_name' => 'Test Location'
         }
       }
-      expected_path = 'events/test-location/2023/October/15/test-event.json'
+      expected_path = 'events/venue=test-location/year=2023/month=October/day=15/'
       expect(warehouse.generate_file_path(event:event, table_name:'events')).to eq(expected_path)
     end
   end
