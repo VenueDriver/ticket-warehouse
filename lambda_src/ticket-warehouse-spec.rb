@@ -28,7 +28,8 @@ describe TicketWarehouse do
         'Event' => {
           'location_name' => 'Test Location',
           'name' => 'Test Event',
-          'start' => '2023-10-15T20:00:00'
+          'start' => '2023-10-15T20:00:00',
+          'organization_name' => 'Test Location'
         }
       }
       expected_path = 'events/test-location/2023/October/15/test-event.json'
