@@ -10,6 +10,7 @@ require 'forwardable'
 require_relative 'athena-manager'
 require_relative 'lib/ticketsauce_api.rb'
 require_relative 'lib/api_errors.rb'
+require_relative 'lib/s3_uploader.rb'
 
 # RestClient.log = STDOUT
 
@@ -22,6 +23,7 @@ class TicketWarehouse
   extend Forwardable
   def_delegators :@ticketsauce_api, :authenticate!, :fetch_events
   def_delegators :@ticketsauce_api, :fetch_orders, :fetch_order_details, :fetch_checkin_ids
+  attr_accessor :s3_uploader, :skip_athena_partitioning
 
   def initialize(client_id:, client_secret:)
     @ticketsauce_api = TicketsauceApi.new(client_id: client_id, client_secret: client_secret)
@@ -35,8 +37,21 @@ class TicketWarehouse
       'ticket_warehouse_checkin_ids'
     ]
     @existing_athena_partitions = nil
+    @skip_athena_partitioning = false
+    @s3_uploader = S3Uploader.new(@s3, @bucket_name)
   end
 
+  def self.init_default(localize:true, skip_athena_partitioning:false)
+    obj = self.new(      
+      client_id:     ENV['TICKETSAUCE_CLIENT_ID'],
+      client_secret: ENV['TICKETSAUCE_CLIENT_SECRET'])
+    obj.tap do |o|
+      o.authenticate!
+			o.s3_uploader = LocalUploader.new if localize
+      o.skip_athena_partitioning = skip_athena_partitioning
+    end
+  end
+	
   def archive_events(time_range: nil, num_threads: 4)
     puts "Archiving events for time range: #{time_range}"
 
@@ -129,31 +144,10 @@ class TicketWarehouse
           )
 
           puts "Archived #{checkin_ids.count} checkin IDs for event #{event['Event']['name']}"
-
-          # Update the Athena partitions if necessary.
-          puts 'Existing partition count per table (first table): ' +
-            existing_athena_partitions.count.to_s
-          updated_partitions = false
-          partition = athena_partitions(event: event).first
-          raw_partition_name =
-            partition.match(%r{venue=(?<venue>[^/]+)/year=(?<year>\d+)/month=(?<month>\w+)/day=(?<day>\d+)/}) do |match|
-              "venue=#{match[:venue]}/year=#{match[:year]}/month=#{match[:month]}/day=#{match[:day]}"
-            end
-          puts "Existing partitions: #{existing_athena_partitions}" if ENV['DEBUG']
-          puts "Partition: #{partition}" if ENV['DEBUG']
-          puts "Raw partition name: #{raw_partition_name}" if ENV['DEBUG']
-          unless existing_athena_partitions.include?(raw_partition_name)
-            puts "Creating Athena partition in all four tables: #{raw_partition_name}"
-            @tables.each do |table_name|
-              query_string = partition.match(%r{venue=(?<venue>[^/]+)/year=(?<year>\d+)/month=(?<month>\w+)/day=(?<day>\d+)/}) do |m|
-                "ALTER TABLE #{table_name} ADD PARTITION (venue = '#{m[:venue]}', year = '#{m[:year]}', month = '#{m[:month]}', day = '#{m[:day]}');"
-              end
-              puts "Query string: #{query_string}" if ENV['DEBUG']
-              @athena.start_query(query_string: query_string)
-            end
-            updated_partitions = true
+         
+          if !@skip_athena_partitioning
+            update_athena_partitions(event: event ) 
           end
-          puts "Updated partition count: #{existing_athena_partitions(memoize:false).count}" if updated_partitions
         rescue APINoDataError => error
           puts "No orders for event #{event['Event']['name']}"
         rescue => error
@@ -176,6 +170,32 @@ class TicketWarehouse
 
     puts "Archived #{events.length} events."
 
+  end
+
+  def update_athena_partitions(event: )
+    puts 'Existing partition count per table (first table): ' +
+      existing_partitions.count.to_s
+    updated_partitions = false
+    partition = athena_partitions(event: event).first
+    raw_partition_name =
+      partition.match(%r{venue=(?<venue>[^/]+)/year=(?<year>\d+)/month=(?<month>\w+)/day=(?<day>\d+)/}) do |match|
+        "venue=#{match[:venue]}/year=#{match[:year]}/month=#{match[:month]}/day=#{match[:day]}"
+      end
+    puts "Existing partitions: #{existing_partitions}" if ENV['DEBUG']
+    puts "Partition: #{partition}" if ENV['DEBUG']
+    puts "Raw partition name: #{raw_partition_name}" if ENV['DEBUG']
+    unless existing_partitions.include?(raw_partition_name)
+      puts "Creating Athena partition in all four tables: #{raw_partition_name}"
+      @tables.each do |table_name|
+        query_string = partition.match(%r{venue=(?<venue>[^/]+)/year=(?<year>\d+)/month=(?<month>\w+)/day=(?<day>\d+)/}) do |m|
+          "ALTER TABLE #{table_name} ADD PARTITION (venue = '#{m[:venue]}', year = '#{m[:year]}', month = '#{m[:month]}', day = '#{m[:day]}');"
+        end
+        puts "Query string: #{query_string}" if ENV['DEBUG']
+        @athena.start_query(query_string: query_string)
+      end
+      updated_partitions = true
+    end
+    puts "Updated partition count: #{existing_partitions(memoize:false).count}" if updated_partitions
   end
 
   def archive_tickets(event:, tickets:)
@@ -204,16 +224,7 @@ class TicketWarehouse
   end
 
   def generate_file_path(event:, table_name:)
-    puts "Generating file path for event #{event['Event']['name']} and table #{table_name}" if ENV['DEBUG']
-    location = url_safe_name(event['Event']['organization_name'])
-    start = DateTime.parse(event['Event']['start'])
-    
-    year = start.year.to_s
-    month_name = Date::MONTHNAMES[start.month]
-    day_number = start.day.to_s.rjust(2, '0')
-    event_name = url_safe_name(event['Event']['name'])
-    
-    "#{table_name}/venue=#{location}/year=#{year}/month=#{month_name}/day=#{day_number}/"
+    @s3_uploader.generate_file_path(event:event, table_name:table_name)
   end
 
   def fetch_events_by_time_range(time_range: nil)
@@ -282,17 +293,7 @@ class TicketWarehouse
   end
 
   def upload_to_s3(event:, data:, table_name:)
-    puts "Uploading #{data.length} records to #{table_name} on S3..." if ENV['DEBUG']
-
-    event_name = url_safe_name(event['Event']['name'])
-    file_path = generate_file_path(event:event, table_name:table_name) +
-      "#{url_safe_name(event_name)}.json"
-
-    puts "Archiving #{table_name} for event #{event_name} to S3 at file path: #{file_path}"
-    
-    s3_object = @s3.bucket(@bucket_name).object(file_path)
-
-    s3_object.put(body: to_ndjson(data))
+    @s3_uploader.upload_to_s3(event: event, data: data, table_name: table_name)
   end
 
 end
