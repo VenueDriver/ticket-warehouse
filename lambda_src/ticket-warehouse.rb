@@ -11,6 +11,7 @@ require_relative 'athena-manager'
 require_relative 'lib/ticketsauce_api.rb'
 require_relative 'lib/api_errors.rb'
 require_relative 'lib/s3_uploader.rb'
+require_relative 'lib/pool.rb'
 
 # RestClient.log = STDOUT
 
@@ -58,116 +59,106 @@ class TicketWarehouse
     events = fetch_events_by_time_range(time_range: time_range)
 
     puts "Archiving #{events.length} events."
-    puts "Thread pool size: #{num_threads}"
-
-    pool = Concurrent::ThreadPoolExecutor.new(
-      min_threads: num_threads,
-      max_threads: num_threads,
-      max_queue: 0,
-      fallback_policy: :caller_runs
-    )
 
     stop_due_to_error = Concurrent::AtomicBoolean.new(false)
-    events.each do |event|
-      # pool.post do
-        begin
-          # Archive the event.
-          upload_to_s3(
-            event: event,
-            data: [event],
-            table_name: 'events'
-          )
 
-          # Archive orders for the event.
+    Pool.with_thread_pool(num_threads:num_threads, using_threads:false) do |pool|
+      events.each do |event|
+        pool.post do
           begin
-            orders = fetch_orders(event: event, return_line_item_fees: true)
-            archived_tickets_count = 0
-            tickets_for_orders = []
-            orders_with_order_details =
-              orders.map do |order|
-                order_details = fetch_order_details(order: order)
-
-                tickets_for_orders << order_details['Ticket']
-
-                order_details.merge(
-                    'LineItemFees' => order['LineItemFees']
-                  )
-              end
+            # Archive the event.
             upload_to_s3(
               event: event,
-              data: orders_with_order_details,
-              table_name: 'orders'
+              data: [event],
+              table_name: 'events'
             )
-            puts "HELO?"
-            archive_tickets(event: event, tickets: tickets_for_orders.flatten)
-
+  
+            # Archive orders for the event.
+            begin
+              orders = fetch_orders(event: event, return_line_item_fees: true)
+              archived_tickets_count = 0
+              tickets_for_orders = []
+              orders_with_order_details =
+                orders.map do |order|
+                  order_details = fetch_order_details(order: order)
+  
+                  tickets_for_orders << order_details['Ticket']
+  
+                  order_details.merge(
+                      'LineItemFees' => order['LineItemFees']
+                    )
+                end
+              upload_to_s3(
+                event: event,
+                data: orders_with_order_details,
+                table_name: 'orders'
+              )
+              puts "HELO?"
+              archive_tickets(event: event, tickets: tickets_for_orders.flatten)
+  
+            rescue APINoDataError => error
+              puts "No orders for event #{event['Event']['name']}"
+              orders = orders_with_order_details = []
+            rescue => error
+              puts "Error archiving orders for event #{event['Event']['name']}: #{error.message}"
+              puts "Error class: #{error.class}"
+              puts error.backtrace.join("\n")
+              stop_due_to_error.make_true
+              raise error
+            end
+  
+            # Archive tickets for the orders for the event.
+            tickets_for_orders =
+              orders_with_order_details.map do |order|
+                order['Ticket'].map do |ticket|
+                  ticket.merge(
+                    'order_id' => order['Order']['id']
+                  )
+                end
+              end.flatten.map do |ticket|
+                  ticket.merge(
+                    'event_id' => event['Event']['id']
+                  )
+                end
+            upload_to_s3(
+              event: event,
+              data: tickets_for_orders,
+              table_name: 'tickets'
+            )
+            
+            puts "Archived #{orders.count} orders with #{tickets_for_orders.count} tickets for event #{event['Event']['name']}"
+  
+            # Archive checkin IDs for the event.
+            checkin_ids = fetch_checkin_ids(event: event)
+            upload_to_s3(
+              event: event,
+              # The API gives us just a list of checkin IDs, not JSON data.
+              # So, transform it.  Give it a column name: 'ticket_id'.
+              data: checkin_ids.map{|id| {'ticket_id' => id} },
+              table_name: 'checkin_ids'
+            )
+  
+            puts "Archived #{checkin_ids.count} checkin IDs for event #{event['Event']['name']}"
+            
+            if !@skip_athena_partitioning
+              update_athena_partitions(event: event ) 
+            end
           rescue APINoDataError => error
             puts "No orders for event #{event['Event']['name']}"
-            orders = orders_with_order_details = []
           rescue => error
-            puts "Error archiving orders for event #{event['Event']['name']}: #{error.message}"
-            puts "Error class: #{error.class}"
+            puts "Error archiving event #{event['Event']['name']}: #{error.message}"
             puts error.backtrace.join("\n")
             stop_due_to_error.make_true
-            raise error
-          end
-
-          # Archive tickets for the orders for the event.
-          tickets_for_orders =
-            orders_with_order_details.map do |order|
-              order['Ticket'].map do |ticket|
-                ticket.merge(
-                  'order_id' => order['Order']['id']
-                )
-              end
-            end.flatten.map do |ticket|
-                ticket.merge(
-                  'event_id' => event['Event']['id']
-                )
-              end
-          upload_to_s3(
-            event: event,
-            data: tickets_for_orders,
-            table_name: 'tickets'
-          )
-          
-          puts "Archived #{orders.count} orders with #{tickets_for_orders.count} tickets for event #{event['Event']['name']}"
-
-          # Archive checkin IDs for the event.
-          checkin_ids = fetch_checkin_ids(event: event)
-          upload_to_s3(
-            event: event,
-            # The API gives us just a list of checkin IDs, not JSON data.
-            # So, transform it.  Give it a column name: 'ticket_id'.
-            data: checkin_ids.map{|id| {'ticket_id' => id} },
-            table_name: 'checkin_ids'
-          )
-
-          puts "Archived #{checkin_ids.count} checkin IDs for event #{event['Event']['name']}"
-         
-          if !@skip_athena_partitioning
-            update_athena_partitions(event: event ) 
-          end
-        rescue APINoDataError => error
-          puts "No orders for event #{event['Event']['name']}"
-        rescue => error
-          puts "Error archiving event #{event['Event']['name']}: #{error.message}"
-          puts error.backtrace.join("\n")
-          stop_due_to_error.make_true
-        ensure
-          if stop_due_to_error.true?
-            puts "Stopping due to error..."
-            pool.kill
-            exit(1)
+          ensure
+            if stop_due_to_error.true?
+              puts "Stopping due to error..."
+              pool.kill
+              exit(1)
+            end
           end
         end
-      # end
+      end
     end
-
-    pool.shutdown
-    puts "Waiting for all threads to complete..."
-    pool.wait_for_termination
-
     puts "Archived #{events.length} events."
 
   end
