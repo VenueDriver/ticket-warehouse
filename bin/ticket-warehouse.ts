@@ -46,7 +46,7 @@ new TicketWarehousePipelineStack(app, 'ticket-warehouse-pipeline-development', {
 });
 
 new TicketWarehouseStack(app, 'ticket-warehouse-development-stack', {
-  Stage: 'development',
+  Stage: 'development-stack',
   AccountToDeployTo: developmentAccount,
   DeploymentRegion: 'us-east-1'
 });
