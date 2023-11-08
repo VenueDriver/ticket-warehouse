@@ -13,6 +13,14 @@ class TicketsauceApi
     @access_token = nil
   end
 
+  def self.init_default
+    self.new(      
+      client_id:     ENV['TICKETSAUCE_CLIENT_ID'],
+      client_secret: ENV['TICKETSAUCE_CLIENT_SECRET']).tap do |api| 
+        api.authenticate!
+      end
+  end
+
   def authenticate!
     response = RestClient.post('https://api.ticketsauce.com/v2/oauth/token', {
       grant_type: 'client_credentials',
