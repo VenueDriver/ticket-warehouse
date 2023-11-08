@@ -91,6 +91,12 @@ class TicketWarehouse
                   else
                     line_item_fees_orig.transform_keys{|key| underscore_safe_name(key)}
                   end
+
+                  if ENV['DEBUG']
+                    puts "Line item fees: #{line_item_fees_orig}"
+                    puts "Transformed:"
+                    puts line_item_transformed
+                  end
   
                   order_details.merge(
                     'LineItemFees' => line_item_transformed
@@ -173,17 +179,17 @@ class TicketWarehouse
 
   def update_athena_partitions(event: )
     puts 'Existing partition count per table (first table): ' +
-      existing_partitions.count.to_s
+      existing_athena_partitions.count.to_s
     updated_partitions = false
     partition = athena_partitions(event: event).first
     raw_partition_name =
       partition.match(%r{venue=(?<venue>[^/]+)/year=(?<year>\d+)/month=(?<month>\w+)/day=(?<day>\d+)/}) do |match|
         "venue=#{match[:venue]}/year=#{match[:year]}/month=#{match[:month]}/day=#{match[:day]}"
       end
-    puts "Existing partitions: #{existing_partitions}" if ENV['DEBUG']
+    puts "Existing partitions: #{existing_athena_partitions}" if ENV['DEBUG']
     puts "Partition: #{partition}" if ENV['DEBUG']
     puts "Raw partition name: #{raw_partition_name}" if ENV['DEBUG']
-    unless existing_partitions.include?(raw_partition_name)
+    unless existing_athena_partitions.include?(raw_partition_name)
       puts "Creating Athena partition in all four tables: #{raw_partition_name}"
       @tables.each do |table_name|
         query_string = partition.match(%r{venue=(?<venue>[^/]+)/year=(?<year>\d+)/month=(?<month>\w+)/day=(?<day>\d+)/}) do |m|
@@ -194,7 +200,7 @@ class TicketWarehouse
       end
       updated_partitions = true
     end
-    puts "Updated partition count: #{existing_partitions(memoize:false).count}" if updated_partitions
+    puts "Updated partition count: #{athena_partitions(memoize:false).count}" if updated_partitions
   end
 
   def archive_tickets(event:, tickets:)
