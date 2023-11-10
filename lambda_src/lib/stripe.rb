@@ -41,11 +41,11 @@ class StripeArchiver
       if charge[:status] == 'succeeded'
         charges <<
           {
-            id:             charge[:id],
-            created:        Time.at(charge[:created]),
-            event_date:     charge['metadata']['event_start'],
-            payment_intent: charge['payment_intent'],
-            charge_id:      charge['id']
+            id:                    charge[:id],
+            created:              Time.at(charge[:created]),
+            event_date:           charge['metadata']['event_start'],
+            payment_intent:       charge['payment_intent'],
+            ticketsauce_order_id: charge['metadata']['order_id']
           }
       end
     end
