@@ -44,6 +44,7 @@ class TicketsauceApi
     params[:organization_id] = organization_id if organization_id
     params[:start_before] = start_before if start_before
     params[:start_after] = start_after if start_after
+    params[:privacy_type] = 'all'
     
     query_string = convert_to_query_string(params)
     

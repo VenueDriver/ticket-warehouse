@@ -85,12 +85,8 @@ class TicketWarehouse
                   tickets_for_orders << order_details['Ticket']
 
                   line_item_fees_orig = order['LineItemFees']
-
-                  line_item_transformed = if line_item_fees_orig.nil?
-                    nil
-                  else
-                    line_item_fees_orig.transform_keys{|key| underscore_safe_name(key)}
-                  end
+                  line_item_transformed =
+                    ensure_all_fees_present(line_item_fees_orig)
 
                   if ENV['DEBUG']
                     puts "Line item fees: #{line_item_fees_orig}"
@@ -107,7 +103,7 @@ class TicketWarehouse
                 data: orders_with_order_details,
                 table_name: 'orders'
               )
-              puts "HELO?"
+
               archive_tickets(event: event, tickets: tickets_for_orders.flatten)
   
             rescue APINoDataError => error
@@ -200,7 +196,7 @@ class TicketWarehouse
       end
       updated_partitions = true
     end
-    puts "Updated partition count: #{athena_partitions(memoize:false).count}" if updated_partitions
+    puts "Updated partition count: #{existing_athena_partitions(memoize:false).count}" if updated_partitions
   end
 
   def archive_tickets(event:, tickets:)
@@ -256,10 +252,9 @@ class TicketWarehouse
         (Time.now - 86400).strftime('%Y-%m-%d')
     end
 
-    events = fetch_events(
+    fetch_events(
       start_before: start_before,
       start_after: start_after)
-    events
   end
 
   def athena_partitions(event:)
@@ -303,6 +298,16 @@ class TicketWarehouse
 
   def upload_to_s3(event:, data:, table_name:)
     @s3_uploader.upload_to_s3(event: event, data: data, table_name: table_name)
+  end
+
+  def ensure_all_fees_present(line_item_fees_orig)
+    fee_types = %w[ticketing_fee surcharge let_tax sales_tax venue_fee admin_fee_not_a_gratuity_ gratuity]
+    line_item_fees = line_item_fees_orig || {}
+    fee_types.each do |fee_type|
+      # Ensure each fee type is in the hash, with either its original or nil value
+      line_item_fees[underscore_safe_name(fee_type)] = line_item_fees_orig&.fetch(fee_type, nil)
+    end
+    line_item_fees
   end
 
 end
