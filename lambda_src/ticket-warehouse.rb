@@ -301,13 +301,17 @@ class TicketWarehouse
   end
 
   def ensure_all_fees_present(line_item_fees_orig)
+    # Define the order of fee types
     fee_types = %w[ticketing_fee surcharge let_tax sales_tax venue_fee admin_fee_not_a_gratuity_ gratuity]
-    line_item_fees = line_item_fees_orig || {}
-    fee_types.each do |fee_type|
-      # Ensure each fee type is in the hash, with either its original or nil value
-      line_item_fees[underscore_safe_name(fee_type)] = line_item_fees_orig&.fetch(fee_type, nil)
+    line_item_fees_orig ||= {}
+    
+    # Transform the keys of the original hash
+    transformed_fees = line_item_fees_orig.transform_keys { |k| underscore_safe_name(k) }
+  
+    # Build a new hash with keys in the defined order, pulling values from the transformed hash
+    fee_types.each_with_object({}) do |fee_type, ordered_fees|
+      ordered_fees[fee_type] = transformed_fees.fetch(fee_type, nil)
     end
-    line_item_fees
   end
 
 end
