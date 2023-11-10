@@ -12,6 +12,7 @@ require_relative 'lib/ticketsauce_api.rb'
 require_relative 'lib/api_errors.rb'
 require_relative 'lib/s3_uploader.rb'
 require_relative 'lib/pool.rb'
+require_relative 'lib/stripe.rb'
 
 # RestClient.log = STDOUT
 
