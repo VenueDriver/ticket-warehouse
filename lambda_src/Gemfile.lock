@@ -17,6 +17,9 @@ GEM
     aws-sdk-kms (1.72.0)
       aws-sdk-core (~> 3, >= 3.184.0)
       aws-sigv4 (~> 1.1)
+    aws-sdk-quicksight (1.95.0)
+      aws-sdk-core (~> 3, >= 3.184.0)
+      aws-sigv4 (~> 1.1)
     aws-sdk-s3 (1.136.0)
       aws-sdk-core (~> 3, >= 3.181.0)
       aws-sdk-kms (~> 1)
@@ -60,6 +63,7 @@ GEM
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.12.0)
     rspec-support (3.12.1)
+    stripe (10.1.0)
     unf (0.1.4)
       unf_ext
     unf_ext (0.0.8.2)
@@ -70,6 +74,7 @@ PLATFORMS
 DEPENDENCIES
   aws-sdk-athena (~> 1.75)
   aws-sdk-glue (~> 1.157)
+  aws-sdk-quicksight (~> 1.94)
   aws-sdk-s3 (~> 1.136)
   concurrent-ruby (~> 1.2, >= 1.2.2)
   dotenv (~> 2.8, >= 2.8.1)
@@ -77,6 +82,7 @@ DEPENDENCIES
   rest-client (~> 2.1)
   rexml (~> 3.2, >= 3.2.6)
   rspec (~> 3.12.0)
+  stripe (~> 10.1)
 
 BUNDLED WITH
-   2.4.20
+   2.4.12
