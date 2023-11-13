@@ -216,7 +216,7 @@ export class TicketWarehouseStack extends cdk.Stack {
           path: `s3://${ticketWarehouseBucket.bucketName}/events/`
         }]
       },
-      name: `ticket-warehouse-events-crawler-${stage}`,
+      name: `ticket-warehouse-events-${stage}`,
       tablePrefix: 'ticket_warehouse_',
       schemaChangePolicy: {
         deleteBehavior: 'LOG'
@@ -232,7 +232,7 @@ export class TicketWarehouseStack extends cdk.Stack {
           path: `s3://${ticketWarehouseBucket.bucketName}/orders/`
         }]
       },
-      name: `ticket-warehouse-orders-crawler-${stage}`,
+      name: `ticket-warehouse-orders-${stage}`,
       tablePrefix: 'ticket_warehouse_',
       schemaChangePolicy: {
         deleteBehavior: 'LOG'
@@ -248,7 +248,7 @@ export class TicketWarehouseStack extends cdk.Stack {
           path: `s3://${ticketWarehouseBucket.bucketName}/tickets/`
         }]
       },
-      name: `ticket-warehouse-tickets-crawler-${stage}`,
+      name: `ticket-warehouse-tickets-${stage}`,
       tablePrefix: 'ticket_warehouse_',
       schemaChangePolicy: {
         deleteBehavior: 'LOG'
@@ -264,7 +264,7 @@ export class TicketWarehouseStack extends cdk.Stack {
           path: `s3://${ticketWarehouseBucket.bucketName}/ticket_types/`
         }]
       },
-      name: `ticket-warehouse-ticket-types-crawler-${stage}`,
+      name: `ticket-warehouse-ticket-types-${stage}`,
       tablePrefix: 'ticket_warehouse_',
       schemaChangePolicy: {
         deleteBehavior: 'LOG'
@@ -280,13 +280,29 @@ export class TicketWarehouseStack extends cdk.Stack {
           path: `s3://${ticketWarehouseBucket.bucketName}/checkin_ids/`
         }]
       },
-      name: `ticket-warehouse-checkin-ids-crawler-${stage}`,
+      name: `ticket-warehouse-checkin-ids-${stage}`,
       tablePrefix: 'ticket_warehouse_',
       schemaChangePolicy: {
         deleteBehavior: 'LOG'
       }
     });
 
+    // Add a crawler for Stripe data
+    const stripeChargesCrawler = new glue.CfnCrawler(this, `StripeChargesCrawler-${stage}`, {
+      databaseName: athenaDatabase.database,
+      role: glueCrawlerRole.roleArn,
+      targets: {
+        s3Targets: [{
+          path: `s3://${ticketWarehouseBucket.bucketName}/stripe_charges/`
+        }]
+      },
+      name: `ticket-warehouse-stripe-charges-${stage}`,
+      tablePrefix: 'ticket_warehouse_',
+      schemaChangePolicy: {
+        deleteBehavior: 'LOG'
+      }
+    });
+    
     /////////////
     // Outputs
     
