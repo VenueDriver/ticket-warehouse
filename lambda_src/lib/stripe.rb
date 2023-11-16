@@ -14,41 +14,68 @@ class StripeArchiver
     @s3_uploader = S3Uploader.new(@s3, @bucket_name)
   end
 
-  def archive_charges
-    @successful_charges ||= fetch_successful_stripe_charges
-
-    @successful_charges.each do |charge|
-      upload_to_s3(
-        date_str: charge[:created].strftime('%Y-%m-%d'),
-        data: [charge],
-        table_name: 'stripe_charges')
-    end
+  def archive_charges(time_range:)
+    @successful_charges ||= fetch_successful_stripe_charges(time_range: time_range)
   end
 
   private
 
-  def fetch_successful_stripe_charges
-    one_week_ago = (Time.now - 7 * 24 * 60 * 60).to_i
+  def fetch_successful_stripe_charges(time_range:)
+    print "Fetching successful Stripe charges for #{time_range}..."
+
+    cutoff =
+      case time_range
+      when 'current'
+        # Now minus one day.
+        (Time.now - 1 * 24 * 60 * 60).to_i
+      when 'upcoming'
+        # Now minus one day.
+        (Time.now - 1 * 24 * 60 * 60).to_i
+      when 'recent'
+        # Now minus 30 days.
+        (Time.now - 90 * 24 * 60 * 60).to_i
+      else
+        # The previous year.
+        (Time.now - 365 * 24 * 60 * 60).to_i
+      end
+
+    # Format the cutoff as a date.
+    cutoff_date = Time.at(cutoff).strftime('%Y-%m-%d')
+    puts "cutoff_date: #{cutoff_date}"
+
     charges = []
 
     payments =
       Stripe::Charge.list(
-        limit: 100, created: { gte: one_week_ago })
+        limit: 100, created: { gte: cutoff })
 
     payments.auto_paging_each do |charge|
-      next if charge.calculated_statement_descriptor =~ /ticket driver/i
-      next unless charge.status.eql?('succeeded')
+      # puts Time.at(charge.created).strftime('%Y-%m-%d')
+      if charge.calculated_statement_descriptor =~ /ticket driver/i
+        # puts "skipping, statement descriptor: #{charge.calculated_statement_descriptor}"
+        next
+      end
+      unless charge.status.eql?('succeeded')
+        # puts "skipping, status: #{charge.status}"
+        next
+      end
       if charge[:status] == 'succeeded'
-        charges <<
-          {
-            id:                    charge[:id],
-            created:              Time.at(charge[:created]),
-            event_date:           charge['metadata']['event_start'],
-            payment_intent:       charge['payment_intent'],
-            ticketsauce_order_id: charge['metadata']['order_id']
-          }
+        upload_to_s3(
+          date_str: Time.at(charge[:created]).strftime('%Y-%m-%d'),
+          data: [
+            {
+              id:                   charge[:id],
+              created:              Time.at(charge[:created]),
+              event_date:           charge['metadata']['event_start'],
+              payment_intent:       charge['payment_intent'],
+              ticketsauce_order_id: charge['metadata']['order_id']
+            }
+          ],
+          table_name: 'stripe_charges')
+
       end
     end
+    puts ''
 
     charges
   end
