@@ -6,6 +6,8 @@ require 'aws-sdk-s3'
 require 'aws-sdk-glue'
 require 'concurrent'
 require 'forwardable'
+require 'bigdecimal'
+require 'bigdecimal/util'
 
 require_relative 'athena-manager'
 require_relative 'lib/ticketsauce_api.rb'
@@ -41,6 +43,7 @@ class TicketWarehouse
     @existing_athena_partitions = nil
     @skip_athena_partitioning = false
     @s3_uploader = S3Uploader.new(@s3, @bucket_name)
+    @fee_types = %w[ticketing_fee surcharge let_tax sales_tax venue_fee admin_fee_not_a_gratuity_ gratuity]
   end
 
   def self.init_default(localize:true, skip_athena_partitioning:false)
@@ -76,9 +79,12 @@ class TicketWarehouse
   
             # Archive orders for the event.
             begin
+              puts "\nArchiving order for event #{event['Event']['name']}"
+
               orders = fetch_orders(event: event, return_line_item_fees: true)
               archived_tickets_count = 0
               tickets_for_orders = []
+              line_item_fees_for_order = {}
               orders_with_order_details =
                 orders.map do |order|
                   order_details = fetch_order_details(order: order)
@@ -86,18 +92,23 @@ class TicketWarehouse
                   tickets_for_orders << order_details['Ticket']
 
                   line_item_fees_orig = order['LineItemFees']
-                  line_item_transformed =
+                  line_items_transformed =
                     ensure_all_fees_present(line_item_fees_orig)
 
                   if ENV['DEBUG']
                     puts "Line item fees: #{line_item_fees_orig}"
                     puts "Transformed:"
-                    puts line_item_transformed
+                    puts line_items_transformed
                   end
+
+                  # Store this so that the ticket can access it a the next step.
+                  puts "STORING: #{line_items_transformed}" if ENV['DEBUG']
+                  line_item_fees_for_order[order['Order']['id']] =
+                    line_items_transformed
   
                   order_details.merge(
-                    'LineItemFees' => line_item_transformed
-                  ) 
+                    'LineItemFees' => line_items_transformed
+                  )
                 end
               upload_to_s3(
                 event: event,
@@ -123,13 +134,59 @@ class TicketWarehouse
               orders_with_order_details.map do |order|
                 order['Ticket'].map do |ticket|
                   ticket.merge(
-                    'order_id' => order['Order']['id']
+                    'order_id' => order['Order']['id'],
+                    'order_total_paid' => order['Order']['total_paid'],
+                    'order_total_face_value' =>
+                      order['Ticket'].sum{|ticket| ticket['price'].to_d }.to_s
                   )
                 end
               end.flatten.map do |ticket|
+
+                  # Compute the per-ticket split for the line item fees
+                  # at the Order level.
+                  puts "\nComputing line item fees for ticket: #{ticket}" if ENV['DEBUG']
+                  puts "Line item fees for order: #{line_item_fees_for_order}" if ENV['DEBUG']
+
+                  line_item_fees = line_item_fees_for_order[ticket['order_id']]
+
+                  puts "Line item fees for ticket: #{line_item_fees}" if ENV['DEBUG']
+
+                  current_sale_face_value =
+                    ticket['ticket_type_price'].to_d
+                  order_total_face_value =
+                    ticket['order_total_face_value'].to_d
+
+                  computed_fees =
+                    @fee_types.map do |fee_type|
+
+                      line_item_fee_from_order =
+                        line_item_fees[fee_type].to_d
+                      
+                      computed_line_item_fee_for_ticket =
+                        if order_total_face_value == 0
+                          0
+                        else
+                          (
+                            current_sale_face_value * line_item_fee_from_order
+                          ) / 
+                            order_total_face_value
+                        end
+
+                      puts "Computed line item fee #{fee_type} for ticket: #{computed_line_item_fee_for_ticket.to_f}" if ENV['DEBUG']
+
+                      binding.pry if ticket['id'].eql? '654a9052-c18c-4e67-aa5a-76320ad1e02d'
+
+                      [fee_type, computed_line_item_fee_for_ticket.to_f]
+                    end.to_h
+
+                  puts "Computed fees: #{computed_fees}" if ENV['DEBUG']
+
                   ticket.merge(
                     'event_id' => event['Event']['id']
                   )
+                  ticket.merge(computed_fees).tap do |ticket|
+                    puts "Ticket: #{ticket}" if ENV['DEBUG']
+                  end
                 end
             upload_to_s3(
               event: event,
@@ -303,14 +360,13 @@ class TicketWarehouse
 
   def ensure_all_fees_present(line_item_fees_orig)
     # Define the order of fee types
-    fee_types = %w[ticketing_fee surcharge let_tax sales_tax venue_fee admin_fee_not_a_gratuity_ gratuity]
     line_item_fees_orig ||= {}
     
     # Transform the keys of the original hash
     transformed_fees = line_item_fees_orig.transform_keys { |k| underscore_safe_name(k) }
   
     # Build a new hash with keys in the defined order, pulling values from the transformed hash
-    fee_types.each_with_object({}) do |fee_type, ordered_fees|
+    @fee_types.each_with_object({}) do |fee_type, ordered_fees|
       ordered_fees[fee_type] = transformed_fees.fetch(fee_type, nil)
     end
   end
