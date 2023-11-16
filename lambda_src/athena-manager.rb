@@ -3,8 +3,8 @@ require 'aws-sdk-athena'
 class AthenaManager
   def initialize
     @client = Aws::Athena::Client.new(region: 'us-east-1')
-    @workgroup = 'TicketWarehouse'
-    @database = 'ticket_warehouse'
+    @workgroup = "TicketWarehouse-#{ENV['ENV']}"
+    @database = "ticket_warehouse-#{ENV['ENV']}"
   end
 
   def repair_table(table_name)
