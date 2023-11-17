@@ -149,6 +149,7 @@ class TicketWarehouse
 
                 ticket.merge(
                   'ticket_type_name' => ticket['TicketType']['name'],
+                  'name' => ticket['TicketType']['name'],
                   'event_id' => event['Event']['id']
                 ).merge(ensure_all_fees_present(ticket['LineItemFees'])).
                 tap do |ticket|
@@ -253,6 +254,11 @@ class TicketWarehouse
     start_before = nil
     start_after = nil
     case time_range
+    when 'test'
+      start_after =
+        Date.parse('2023-12-31').strftime('%Y-%m-%d')
+      start_before =
+      Date.parse('2024-01-02').strftime('%Y-%m-%d')
     when 'current'
       start_after =
         # Now minus one day.
