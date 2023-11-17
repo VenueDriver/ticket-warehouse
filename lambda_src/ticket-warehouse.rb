@@ -89,7 +89,7 @@ class TicketWarehouse
                 orders.map do |order|
                   order_details = fetch_order_details(order: order)
   
-                  tickets_for_orders << order_details['Ticket']
+                  tickets_for_orders << order['Ticket']
 
                   line_item_fees_orig = order['LineItemFees']
                   line_items_transformed =
@@ -100,14 +100,10 @@ class TicketWarehouse
                     puts "Transformed:"
                     puts line_items_transformed
                   end
-
-                  # Store this so that the ticket can access it a the next step.
-                  puts "STORING: #{line_items_transformed}" if ENV['DEBUG']
-                  line_item_fees_for_order[order['Order']['id']] =
-                    line_items_transformed
   
                   order_details.merge(
-                    'LineItemFees' => line_items_transformed
+                    'LineItemFees' => line_items_transformed,
+                    'Ticket' => order['Ticket']
                   )
                 end
               upload_to_s3(
@@ -142,49 +138,16 @@ class TicketWarehouse
                 end
               end.flatten.map do |ticket|
 
-                  # Compute the per-ticket split for the line item fees
-                  # at the Order level.
-                  puts "\nComputing line item fees for ticket: #{ticket}" if ENV['DEBUG']
-                  puts "Line item fees for order: #{line_item_fees_for_order}" if ENV['DEBUG']
-
-                  line_item_fees = line_item_fees_for_order[ticket['order_id']]
-
-                  puts "Line item fees for ticket: #{line_item_fees}" if ENV['DEBUG']
+                  puts "Line item fees for ticket: #{ticket['LineItemFees']}" if ENV['DEBUG']
 
                   current_sale_face_value =
                     ticket['ticket_type_price'].to_d
                   order_total_face_value =
                     ticket['order_total_face_value'].to_d
 
-                  computed_fees =
-                    @fee_types.map do |fee_type|
-
-                      line_item_fee_from_order =
-                        line_item_fees[fee_type].to_d
-                      
-                      computed_line_item_fee_for_ticket =
-                        if order_total_face_value == 0
-                          0
-                        else
-                          (
-                            current_sale_face_value * line_item_fee_from_order
-                          ) / 
-                            order_total_face_value
-                        end
-
-                      puts "Computed line item fee #{fee_type} for ticket: #{computed_line_item_fee_for_ticket.to_f}" if ENV['DEBUG']
-
-                      binding.pry if ticket['id'].eql? '654a9052-c18c-4e67-aa5a-76320ad1e02d'
-
-                      [fee_type, computed_line_item_fee_for_ticket.to_f]
-                    end.to_h
-
-                  puts "Computed fees: #{computed_fees}" if ENV['DEBUG']
-
                   ticket.merge(
                     'event_id' => event['Event']['id']
-                  )
-                  ticket.merge(computed_fees).tap do |ticket|
+                  ).tap do |ticket|
                     puts "Ticket: #{ticket}" if ENV['DEBUG']
                   end
                 end

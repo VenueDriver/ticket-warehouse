@@ -61,7 +61,8 @@ class TicketsauceApi
       params = {
         return_line_item_fees: return_line_item_fees,
         per_page: per_page,
-        page: page
+        page: page,
+        return_tickets: true
       }
       query_string = convert_to_query_string(params)
 
