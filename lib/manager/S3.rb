@@ -14,7 +14,7 @@ module Manager
       )
 
       # Delete all objects in the bucket
-      delete_all_objects(client, bucket_name)
+      delete_all_objects(client: client, bucket_name: ENV['BUCKET_NAME'])
     end
 
     private
@@ -41,17 +41,17 @@ module Manager
       end
     end
 
-    def self.delete_all_objects(client, bucket)
-      puts "  Deleting all objects in bucket #{bucket}..."
+    def self.delete_all_objects(client:, bucket_name:)
+      puts "  Deleting all objects in bucket #{bucket_name}..."
 
       # List all objects in the bucket
-      objects = client.list_objects_v2(bucket: bucket).contents
+      objects = client.list_objects_v2(bucket: bucket_name).contents
 
       # Delete each object
       objects.each do |object|
         puts "    Deleting object #{object.key}..."
         client.delete_object(
-          bucket: bucket,
+          bucket: bucket_name,
           key: object.key
         )
       end
