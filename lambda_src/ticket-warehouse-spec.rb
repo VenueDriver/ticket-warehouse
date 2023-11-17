@@ -18,6 +18,14 @@ describe TicketWarehouse do
     }.not_to raise_error
   end
 
+  it 'can download events locally with threading' do
+    warehouse = TicketWarehouse.init_default(localize:true,skip_athena_partitioning:true)
+
+    expect{
+      warehouse.archive_events(time_range:'current', enable_threading:true)
+    }.not_to raise_error
+  end
+
   describe '#generate_file_path' do
     it 'generates a file path based on event data' do
       warehouse = TicketWarehouse.new(
