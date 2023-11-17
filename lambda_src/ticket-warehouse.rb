@@ -102,9 +102,16 @@ class TicketWarehouse
                   end
   
                   order_details.merge(
-                    'LineItemFees' => line_items_transformed,
-                    'Ticket' => order['Ticket']
-                  )
+                      'LineItemFees' => line_items_transformed,
+                      'Ticket' => order['Ticket'].
+                        map do |ticket_sale|
+                          ticket_sale_with_line_item_fees =
+                            ticket_sale.merge(ensure_all_fees_present(
+                              ticket_sale['LineItemFees']))
+                          ticket_sale_with_line_item_fees.delete('LineItemFees')
+                          ticket_sale_with_line_item_fees
+                        end
+                    )
                 end
               upload_to_s3(
                 event: event,
@@ -146,11 +153,14 @@ class TicketWarehouse
                     ticket['order_total_face_value'].to_d
 
                   ticket.merge(
+                    'ticket_type_name' => ticket['TicketType']['name'],
                     'event_id' => event['Event']['id']
-                  ).tap do |ticket|
+                  ).merge(ensure_all_fees_present(ticket['LineItemFees'])).
+                  tap do |ticket|
                     puts "Ticket: #{ticket}" if ENV['DEBUG']
                   end
                 end
+
             upload_to_s3(
               event: event,
               data: tickets_for_orders,
@@ -235,6 +245,8 @@ class TicketWarehouse
 
     unique_tickets_data =
       tickets_data.uniq{|t| [t['ticket_type_id'], t['ticket_type_price_id']]}
+
+    puts "Archiving #{unique_tickets_data.length} unique tickets for event #{event['Event']['name']}"
 
     # Upload the ticket details to S3.
     upload_to_s3(
