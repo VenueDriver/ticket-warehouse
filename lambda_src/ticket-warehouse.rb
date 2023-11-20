@@ -120,7 +120,7 @@ class TicketWarehouse
                           ticket_sale.merge(ensure_all_fees_present(
                             ticket_sale['LineItemFees']))
                         ticket_sale_with_line_item_fees.tap do |ticket_sale|
-                          puts "order _with_order_details: #{ticket_sale}" if ENV['DEBUG']
+                          # puts "order _with_order_details: #{ticket_sale}" if ENV['DEBUG']
                         end
                       end
                     )
