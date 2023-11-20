@@ -68,6 +68,7 @@ export class TicketWarehouseStack extends cdk.Stack {
         'glue:GetPartitions',
         'glue:BatchCreatePartition',
         'glue:startCrawler',
+        'ssm:GetParameter'
       ],
       resources: ['*'],
     }));
