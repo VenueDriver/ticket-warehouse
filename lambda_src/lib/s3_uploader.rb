@@ -32,7 +32,7 @@ class S3Uploader < UploaderBase
 
   def upload_to_s3(event: nil, data: , table_name: , date_str: nil)
     puts "Uploading #{data.length} records to #{table_name} on S3..." if ENV['DEBUG']
-    puts "Records: #{data}" if ENV['DEBUG']
+    # puts "Records: #{data}" if ENV['DEBUG']
 
     if data.length == 0
       puts "No data to upload for #{table_name}" if ENV['DEBUG']
