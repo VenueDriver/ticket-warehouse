@@ -81,7 +81,7 @@ class TicketWarehouse
 
           # Archive orders for the event.
           begin
-            puts "\nArchiving order for event #{event['Event']['name']}"
+            # puts "\nArchiving order for event #{event['Event']['name']}"
 
             orders = fetch_orders(event: event, return_line_item_fees: true)
             archived_tickets_count = 0
@@ -109,9 +109,9 @@ class TicketWarehouse
                     'Ticket' => order['Ticket'].
                       map do |ticket_sale|
 
-                        if ENV['DEBUG']
-                          puts "Ticket sale line item fees: #{ticket_sale['LineItemFees']}"
-                        end
+                        # if ENV['DEBUG']
+                        #   puts "Ticket sale line item fees: #{ticket_sale['LineItemFees']}"
+                        # end
 
                         # binding.pry unless ticket_sale['LineItemFees'].empty?
                         # binding.pry if ticket_sale['id'].eql? '652d99ca-9a10-4425-865f-47b20ad1e030'
@@ -165,7 +165,7 @@ class TicketWarehouse
               end
             end.flatten.map do |ticket|
 
-              puts "Transformed ticket: #{ticket}" if ENV['DEBUG']
+              # puts "Transformed ticket: #{ticket}" if ENV['DEBUG']
 
               # binding.pry if ticket['id'].eql? '652d99ca-9a10-4425-865f-47b20ad1e030'
 
@@ -224,29 +224,29 @@ class TicketWarehouse
   end
 
   def update_athena_partitions(event: )
-    puts 'Existing partition count per table (first table): ' +
-      existing_athena_partitions.count.to_s
+    # puts 'Existing partition count per table (first table): ' +
+    #   existing_athena_partitions.count.to_s
     updated_partitions = false
     partition = athena_partitions(event: event).first
     raw_partition_name =
       partition.match(%r{venue=(?<venue>[^/]+)/year=(?<year>\d+)/month=(?<month>\w+)/day=(?<day>\d+)/}) do |match|
         "venue=#{match[:venue]}/year=#{match[:year]}/month=#{match[:month]}/day=#{match[:day]}"
       end
-    puts "Existing partitions: #{existing_athena_partitions}" if ENV['DEBUG']
+    # puts "Existing partitions: #{existing_athena_partitions}" if ENV['DEBUG']
     puts "Partition: #{partition}" if ENV['DEBUG']
-    puts "Raw partition name: #{raw_partition_name}" if ENV['DEBUG']
+    # puts "Raw partition name: #{raw_partition_name}" if ENV['DEBUG']
     unless existing_athena_partitions.include?(raw_partition_name)
       puts "Creating Athena partition in all four tables: #{raw_partition_name}"
       @tables.each do |table_name|
         query_string = partition.match(%r{venue=(?<venue>[^/]+)/year=(?<year>\d+)/month=(?<month>\w+)/day=(?<day>\d+)/}) do |m|
           "ALTER TABLE #{table_name} ADD PARTITION (venue = '#{m[:venue]}', year = '#{m[:year]}', month = '#{m[:month]}', day = '#{m[:day]}');"
         end
-        puts "Query string: #{query_string}" if ENV['DEBUG']
+        # puts "Query string: #{query_string}" if ENV['DEBUG']
         @athena.start_query(query_string: query_string)
       end
       updated_partitions = true
     end
-    puts "Updated partition count: #{existing_athena_partitions(memoize:false).count}" if updated_partitions
+    # puts "Updated partition count: #{existing_athena_partitions(memoize:false).count}" if updated_partitions
   end
 
   def archive_tickets(event:, tickets:)
@@ -308,6 +308,8 @@ class TicketWarehouse
         # Now minus one day.
         (Time.now - 86400).strftime('%Y-%m-%d')
     end
+
+    puts "Fetching Ticketsauce events from #{start_after} to #{start_before}"
 
     fetch_events(
       start_before: start_before,

@@ -72,6 +72,8 @@ class TicketsauceApi
       orders.concat(response)
 
       puts "Found #{response.length} orders for page #{page}"
+      # puts "Orders: #{orders}" if ENV['DEBUG']
+
       break if response.length < per_page
   
       page += 1
