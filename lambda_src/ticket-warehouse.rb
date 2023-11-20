@@ -89,6 +89,7 @@ class TicketWarehouse
             line_item_fees_for_order = {}
             orders_with_order_details =
               orders.map do |order|
+
                 order_details = fetch_order_details(order: order)
 
                 tickets_for_orders << order['Ticket']
@@ -97,22 +98,31 @@ class TicketWarehouse
                 line_items_transformed =
                   ensure_all_fees_present(line_item_fees_orig)
 
-                  if ENV['DEBUG']
-                    puts "Line item fees: #{line_item_fees_orig}"
-                    puts "Transformed:"
-                    puts line_items_transformed
-                  end
+                  # if ENV['DEBUG']
+                  #   puts "Line item fees: #{line_item_fees_orig}"
+                  #   puts "Transformed:"
+                  #   puts line_items_transformed
+                  # end
   
                   order_details.merge(
-                      'LineItemFees' => line_items_transformed,
-                      'Ticket' => order['Ticket'].
-                        map do |ticket_sale|
-                          ticket_sale_with_line_item_fees =
-                            ticket_sale.merge(ensure_all_fees_present(
-                              ticket_sale['LineItemFees']))
-                          ticket_sale_with_line_item_fees.delete('LineItemFees')
-                          ticket_sale_with_line_item_fees
+                    'LineItemFees' => line_items_transformed,
+                    'Ticket' => order['Ticket'].
+                      map do |ticket_sale|
+
+                        if ENV['DEBUG']
+                          puts "Ticket sale line item fees: #{ticket_sale['LineItemFees']}"
                         end
+
+                        # binding.pry unless ticket_sale['LineItemFees'].empty?
+                        # binding.pry if ticket_sale['id'].eql? '652d99ca-9a10-4425-865f-47b20ad1e030'
+
+                        ticket_sale_with_line_item_fees =
+                          ticket_sale.merge(ensure_all_fees_present(
+                            ticket_sale['LineItemFees']))
+                        ticket_sale_with_line_item_fees.tap do |ticket_sale|
+                          puts "order _with_order_details: #{ticket_sale}" if ENV['DEBUG']
+                        end
+                      end
                     )
                 end
               upload_to_s3(
@@ -127,25 +137,32 @@ class TicketWarehouse
             orders = orders_with_order_details = []
           end
 
+          next unless orders_with_order_details.any?
+
           # Archive tickets for the orders for the event.
           tickets_for_orders =
-          orders_with_order_details.map do |order|
-            order['Ticket'].map do |ticket|
-              ticket.merge(
-                'order_id' => order['Order']['id'],
-                'order_total_paid' => order['Order']['total_paid'],
-                'order_total_face_value' =>
-                  order['Ticket'].sum{|ticket| ticket['price'].to_d }.to_s
-              )
-            end
-          end.flatten.map do |ticket|
+            orders_with_order_details.map do |order|
+              order['Ticket'].map do |ticket|
+                ticket.merge(
+                  'order_id' => order['Order']['id'],
+                  'order_total_paid' => order['Order']['total_paid'],
+                  'order_total_face_value' =>
+                    sprintf('%.2f',
+                      order['Ticket'].sum{|ticket| ticket['price'].to_d })
+                )
+              end
+            end.flatten.map do |ticket|
 
-              puts "Line item fees for ticket: #{ticket['LineItemFees']}" if ENV['DEBUG']
+              puts "Transformed ticket: #{ticket}" if ENV['DEBUG']
+
+              # binding.pry if ticket['id'].eql? '652d99ca-9a10-4425-865f-47b20ad1e030'
 
               current_sale_face_value =
                 ticket['ticket_type_price'].to_d
               order_total_face_value =
                 ticket['order_total_face_value'].to_d
+
+                # binding.pry if ticket['id'].eql? '654d6891-7270-4f51-b608-362b0ad1e02d'
 
                 ticket.merge(
                   'ticket_type_name' => ticket['TicketType']['name'],
@@ -153,7 +170,8 @@ class TicketWarehouse
                   'event_id' => event['Event']['id']
                 ).merge(ensure_all_fees_present(ticket['LineItemFees'])).
                 tap do |ticket|
-                  puts "Ticket: #{ticket}" if ENV['DEBUG']
+                  # puts "\n---\nLine item fees: #{ticket['LineItemFees']}" if ENV['DEBUG']
+                  # puts "Final ticket: #{ticket}" if ENV['DEBUG']
                 end
               end
 
@@ -254,11 +272,11 @@ class TicketWarehouse
     start_before = nil
     start_after = nil
     case time_range
-    when 'test'
-      start_after =
-        Date.parse('2023-12-31').strftime('%Y-%m-%d')
-      start_before =
-      Date.parse('2024-01-02').strftime('%Y-%m-%d')
+      when 'test'
+        start_after =
+          Date.parse('2023-12-31').strftime('%Y-%m-%d')
+        start_before =
+          Date.parse('2024-01-03').strftime('%Y-%m-%d')
     when 'current'
       start_after =
         # Now minus one day.
