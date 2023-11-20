@@ -63,6 +63,7 @@ export class TicketWarehouseStack extends cdk.Stack {
         'glue:GetDatabase',
         'glue:CreateDatabase',
         'glue:CreateTable',
+        'glue:GetTable',
         'glue:startCrawler',
       ],
       resources: ['*'],
