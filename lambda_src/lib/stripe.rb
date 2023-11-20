@@ -15,6 +15,7 @@ class StripeArchiver
   end
 
   def archive_charges(time_range:)
+    puts "Archiving Stripe charges for #{time_range}..."
     @successful_charges ||= fetch_successful_stripe_charges(time_range: time_range)
   end
 
