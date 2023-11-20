@@ -64,6 +64,7 @@ export class TicketWarehouseStack extends cdk.Stack {
         'glue:CreateDatabase',
         'glue:CreateTable',
         'glue:GetTable',
+        'glue:GetPartitions',
         'glue:BatchCreatePartition',
         'glue:startCrawler',
       ],
