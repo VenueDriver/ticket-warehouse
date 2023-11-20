@@ -130,11 +130,13 @@ class TicketWarehouse
               # from each item within the order[]'Ticket'] key.
               orders_without_raw_line_item_fees =
                 orders_with_order_details.map do |order|
-                  order['Ticket'].map do |ticket|
+                  order_without_fees = order.dup
+                  order_without_fees['Ticket'] = order['Ticket'].map do |ticket|
                     ticket_without_fees = ticket.dup
                     ticket_without_fees.delete('LineItemFees')
                     ticket_without_fees
                   end
+                  order_without_fees
                 end
 
               upload_to_s3(
