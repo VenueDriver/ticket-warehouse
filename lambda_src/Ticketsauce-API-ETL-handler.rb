@@ -5,7 +5,7 @@ require_relative 'ticket-warehouse'
 def lambda_handler(event:, context:)
   puts "Received event: #{JSON.pretty_generate(event)}"
 
-  StripeArchiver.new.archive_charges(time_range:time_range)
+  StripeArchiver.new.archive_charges(time_range event['time_range'])
 
   warehouse = TicketWarehouse.new(
     client_id:     ENV['TICKETSAUCE_CLIENT_ID'],
