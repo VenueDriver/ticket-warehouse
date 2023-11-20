@@ -60,6 +60,7 @@ export class TicketWarehouseStack extends cdk.Stack {
         'athena:ListNamedQueries',
         'athena:StartQueryExecution',
         'athena:GetQueryExecution',
+        'glue:GetDatabase',
         'glue:CreateDatabase',
         'glue:CreateTable',
         'glue:startCrawler',
