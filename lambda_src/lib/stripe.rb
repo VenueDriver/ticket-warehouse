@@ -7,8 +7,11 @@ class StripeArchiver
     environment = ENV['ENV'] || 'development'
     param_name = "stripe_api_key-#{environment}"
     Stripe.api_key =
-      ssm_client.get_parameter(
-        name: param_name, with_decryption: true).parameter.value
+      # Tempooorary workaround for a problem granting permissions
+      # to SSM to the lambda function.
+      # ssm_client.get_parameter(
+      #   name: param_name, with_decryption: true).parameter.value
+      ENV['STRIPE_API_KEY']
     @s3 = Aws::S3::Resource.new(region: 'us-east-1')
     @bucket_name = ENV['BUCKET_NAME']
     @s3_uploader = S3Uploader.new(@s3, @bucket_name)
