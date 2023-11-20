@@ -125,9 +125,21 @@ class TicketWarehouse
                       end
                     )
                 end
+
+              # The raw fees confuse Athena, so remove the ['LineItemFees'] key
+              # from each item within the order[]'Ticket'] key.
+              orders_without_raw_line_item_fees =
+                orders_with_order_details.map do |order|
+                  order['Ticket'].map do |ticket|
+                    ticket_without_fees = ticket.dup
+                    ticket_without_fees.delete('LineItemFees')
+                    ticket_without_fees
+                  end
+                end
+
               upload_to_s3(
                 event: event,
-                data: orders_with_order_details,
+                data: orders_without_raw_line_item_fees,
                 table_name: 'orders'
               )
 
