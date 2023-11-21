@@ -178,15 +178,14 @@ class TicketWarehouse
 
                 # binding.pry if ticket['id'].eql? '654d6891-7270-4f51-b608-362b0ad1e02d'
 
-                ticket.merge(
-                  'ticket_type_name' => ticket['TicketType']['name'],
-                  'name' => ticket['TicketType']['name'],
-                  'event_id' => event['Event']['id']
-                ).merge(ensure_all_fees_present(ticket['LineItemFees'])).
-                tap do |ticket|
-                  # puts "\n---\nLine item fees: #{ticket['LineItemFees']}" if ENV['DEBUG']
-                  # puts "Final ticket: #{ticket}" if ENV['DEBUG']
-                end
+                ticket =
+                  ticket.merge(
+                    'ticket_type_name' => ticket['TicketType']['name'],
+                    'name' => ticket['TicketType']['name'],
+                    'event_id' => event['Event']['id']
+                  ).merge(ensure_all_fees_present(ticket['LineItemFees']))
+                ticket.delete('LineItemFees')
+                ticket
               end
 
           upload_to_s3(
