@@ -38,7 +38,9 @@ class TicketWarehouse
       'ticket_warehouse_events',
       'ticket_warehouse_orders',
       'ticket_warehouse_tickets',
-      'ticket_warehouse_checkin_ids'
+      'ticket_warehouse_ticket_types',
+      'ticket_warehouse_checkin_ids',
+      'ticket_warehouse_stripe_charges'
     ]
     @existing_athena_partitions = nil
     @skip_athena_partitioning = false
