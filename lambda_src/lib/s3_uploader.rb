@@ -40,11 +40,11 @@ class S3Uploader < UploaderBase
     end
   
     if event
-      event_name = url_safe_name(event['Event']['name'])
+      event_id = url_safe_name(event['Event']['id'])
       file_path =
         generate_file_path(event: event, table_name: table_name) +
-        "#{url_safe_name(event_name)}.json"
-      puts "Archiving #{table_name} for event #{event_name} to S3 at file path: #{file_path}"
+        "#{url_safe_name(event_id)}.json"
+      puts "Archiving #{table_name} for event #{event_id} to S3 at file path: #{file_path}"
     elsif date_str
       file_path =
         generate_file_path(date_str: date_str, table_name: table_name) +
