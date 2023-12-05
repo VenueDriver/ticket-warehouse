@@ -44,6 +44,14 @@ class AthenaManager
 
     response = @client.start_query_execution(params)
     wait_for_query_to_complete(response.query_execution_id)
+  rescue Aws::Athena::Errors::InvalidRequestException => e
+    puts "***************************"
+    puts "*"
+    puts "********* Invalid request: #{e.message}"
+    puts "*"
+    puts "* Query string: #{query_string}"
+    puts "*"
+    puts "***************************"
   end
 
   def get_named_query_id(query_name)
