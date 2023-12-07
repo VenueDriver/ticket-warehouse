@@ -8,6 +8,17 @@ module Manifest
         data = self
         binding
       end
+
+      def dev_file_path
+        # want to use venue, event_date, event_title
+        event_date_part = self.event_date.gsub('-', '_')
+        "#{event_date_part}_#{self.venue}_#{self.event_title}.html"
+      end
+
+      def dev_file_name_full
+        base = File.expand_path("~/Desktop/manifest_demos")
+        File.join(base, self.dev_file_path)
+      end
     end
 
     Row = Struct.new(
