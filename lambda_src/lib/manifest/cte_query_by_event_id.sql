@@ -32,6 +32,8 @@ select ev_location as venue
 , CAST( sum( surcharge ) as DECIMAL(10,2) ) as sum_surcharge
 , CAST( sum( let_tax ) as DECIMAL(10,2) ) as sum_let_tax
 , CAST( (100 * sum( let_tax ) / sum(price)) as DECIMAL(10,2) ) as let_tax_rate_observed
+, CAST( sum( sales_tax ) as DECIMAL(10,2) ) as sum_sales_tax
+, CAST( sum( venue_fee ) as DECIMAL(10,2) ) as sum_venue_fee
 
 from casted_data
 where (((true and true and true)))
