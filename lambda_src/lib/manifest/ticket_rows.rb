@@ -10,27 +10,31 @@ require_relative 'output_structs.rb'
 module Manifest
   class TicketRows
     include NowInPacificTime
-    attr_reader  :ticket_rows_symbolized
+    attr_reader  :ticket_rows_symbolized, :ticket_row_structs
 
     def initialize( ticket_rows_array )
       @ticket_rows_symbolized = ticket_rows_array.map do |data_hash|
         data_hash.transform_keys(&:to_sym)
       end
+
+      @ticket_row_structs = @ticket_rows_symbolized.map do |row|
+        Row.new(**row)
+      end
     end
 
     def output_struct
       json_hash = transformed_json
-      json_hash[:ticket_rows] = json_hash.delete(:ticket_rows).map do |row|
-        Row.new(**row)
-      end
+      json_hash[:ticket_rows] = @ticket_row_structs
 
       TopLevelStruct.new(**json_hash)
     end
     
+    # bar card pattern '%VIP%Bar%Card%'
     def transformed_json
       ticket_rows = self.ticket_rows_symbolized
-      event_description = EventDetails.find_event_description(ticket_rows)
-      totals = EventDetails.find_totals(ticket_rows)
+      ticket_row_structs = self.ticket_row_structs
+      event_description = EventDetails.find_event_description(ticket_row_structs)
+      totals = EventDetails.find_totals(ticket_row_structs)
 
       {
         event_date: event_description.event_date,
