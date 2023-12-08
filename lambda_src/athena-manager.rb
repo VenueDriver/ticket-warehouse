@@ -1,10 +1,13 @@
 require 'aws-sdk-athena'
+require_relative 'lib/athena_output.rb'
 
 class AthenaManager
-  def initialize
+  include AthenaOutput::FormatSwitchable
+  def initialize(env_in = ENV['ENV'])
     @client = Aws::Athena::Client.new(region: 'us-east-1')
-    @workgroup = "TicketWarehouse-#{ENV['ENV']}"
-    @database = "ticket_warehouse-#{ENV['ENV']}"
+    @workgroup = "TicketWarehouse-#{env_in}"
+    @database = "ticket_warehouse-#{env_in}"
+    @formatter = AthenaOutput::Original.new
   end
 
   def repair_table(table_name)
@@ -83,17 +86,7 @@ class AthenaManager
             query_execution_id: query_execution_id
           })
           
-          # Initialize an empty array to hold the strings
-          strings_list = []
-          
-          # Iterate through each row in the result set
-          response.result_set.rows.each do |row|
-            # Iterate through each data item in the row (though there appears to be only one data item per row in your example)
-            row.data.each do |datum|
-              # Extract the var_char_value from the datum and add it to the strings_list
-              strings_list << datum.var_char_value
-            end
-          end
+          strings_list = @formatter.process(response)
           
           # Return the list of strings
           return strings_list
