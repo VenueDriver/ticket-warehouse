@@ -6,6 +6,7 @@ require 'tzinfo'
 require_relative 'event_details.rb'
 require_relative 'now_in_pacific_time.rb'
 require_relative 'output_structs.rb'
+require_relative 'with_calculated_fields.rb'
 
 module Manifest
   class TicketRows
@@ -20,6 +21,8 @@ module Manifest
       @ticket_row_structs = @ticket_rows_symbolized.map do |row|
         Row.new(**row)
       end
+      WithCalculatedFields.process!(@ticket_row_structs)
+
     end
 
     def output_struct
@@ -44,6 +47,7 @@ module Manifest
         total_sold: totals.total_sold,
         total_face_value: totals.total_face_value,
         total_let: totals.total_let,
+        total_bar_card: totals.total_bar_card,
 
         ticket_rows: ticket_rows,
         event_id: event_description.event_id,
