@@ -18,30 +18,21 @@ module Manifest
         Desciption.new(venue: venue, event_title: event_title, event_id:event_id, event_date: event_date_out, display_date: display_date)
       end
 
-      # row.sum_bar_card = rev_split.bar_card
-      # row.subtotal_minus_bar_card = rev_split.subtotal_minus_bar_card
-      def find_totals( ticket_row_structs )
-        totals = Totals.new(total_sold: 0, total_face_value: 0, total_let: 0, total_bar_card: 0)
+      def find_totals(ticket_row_structs)
+        totals = Totals.new(total_sold: 0, total_face_value: BigDecimal("0.0"), 
+          total_let: BigDecimal("0.0"), total_bar_card: BigDecimal("0.0"))
         ticket_row_structs.each do |row|
-          #sum_subtotal_string = row.sum_subtotal #row[:sum_subtotal]
-          face_value_string = row.subtotal_minus_bar_card
-          face_value = BigDecimal(face_value_string)
-  
-          sum_let_tax_string = row.sum_let_tax
-          let_tax = BigDecimal(sum_let_tax_string)
-  
           qty = Integer(row.quantity)
+          face_value = BigDecimal(row.subtotal_minus_bar_card)
+          let_tax = BigDecimal(row.sum_let_tax)
+          bar_card = BigDecimal(row.sum_bar_card)
 
-          sum_bar_card_string = row.sum_bar_card
-          bar_card = BigDecimal(sum_bar_card_string)
-  
           totals.total_sold += qty
           totals.total_face_value += face_value
           totals.total_let += let_tax
           totals.total_bar_card += bar_card
         end
-        totals
-  
+
         totals_formatted = Totals.new(
           total_sold: totals.total_sold,
           total_face_value: "%.2f" % totals.total_face_value,
