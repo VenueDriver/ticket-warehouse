@@ -49,6 +49,9 @@ module Manifest
         total_let: totals.total_let,
         total_bar_card: totals.total_bar_card,
 
+        total_sales_tax: totals.total_sales_tax,
+        total_venue_fee: totals.total_venue_fee,
+
         ticket_rows: ticket_rows,
         event_id: event_description.event_id,
 

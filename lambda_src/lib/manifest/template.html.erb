@@ -336,6 +336,11 @@
           <td><%= data.display_date  %> </td>    
         </tr>
 
+        <tr class="striped-NO">
+          <th align="right">Venue Fee </th> 
+          <td align="left"><b><%= data.total_venue_fee  %></b></td>
+        </tr>
+
       </table>
     </div>
     
@@ -363,6 +368,11 @@
           <th align="right">Total LET</th> 
           <td align="left"><b><%= data.total_let  %></b></td>
         </tr>
+
+        <tr class="striped-NO">
+          <th align="right">Total Sales Tax</th> 
+          <td align="left"><b><%= data.total_sales_tax  %></b></td>
+        </tr>
   
       </table>
     </div>
@@ -381,6 +391,8 @@
           <th class="number">Total<br>Bar<br>Revenue</th>
           <th class="number">Total<br>Admission<br>Revenue</th>
           <th class="number">Total<br>LET</th>
+          <th class="number">Total<br>Sales Tax</th>
+          <th class="number">Total<br>Venue Fee</th>
 
         </tr>
       
@@ -398,6 +410,8 @@
           <td class="number"> <%= single_row.sum_bar_card  %></td>
           <td class="number"><%= single_row.subtotal_minus_bar_card  %></td>
           <td class="number"><%= single_row.total_let  %></td>
+          <td class="number"><%= single_row.sum_sales_tax  %></td>
+          <td class="number"><%= single_row.sum_venue_fee  %></td>
           
         </tr>
 
@@ -412,6 +426,8 @@
         <td class="number"><b> <%= data.total_bar_card %></b></td>
         <td class="number"><b><%= data.total_face_value  %></b></td>
         <td class="number"><b><%= data.total_let  %></b></td>
+        <td class="number"><b><%= data.total_sales_tax  %></b></td>
+        <td class="number"><b><%= data.total_venue_fee  %></b></td>
       </tr>
       </table>
       
