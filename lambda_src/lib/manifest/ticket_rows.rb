@@ -36,8 +36,8 @@ module Manifest
     def transformed_json
       ticket_rows = self.ticket_rows_symbolized
       ticket_row_structs = self.ticket_row_structs
-      event_description = EventDetails.find_event_description(ticket_row_structs)
-      totals = EventDetails.find_totals(ticket_row_structs)
+      event_description = EventDescription.calculate(ticket_row_structs)
+      totals = EventTotals.calculate(ticket_row_structs)
 
       {
         event_date: event_description.event_date,
