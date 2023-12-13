@@ -33,9 +33,6 @@ module Manifest
 
       keyword_init: true) do
         
-        def total_let
-          self.sum_let_tax
-        end
 
       end
   end
