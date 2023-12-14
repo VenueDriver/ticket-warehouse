@@ -224,7 +224,7 @@ export class TicketWarehouseStack extends cdk.Stack {
             path: `s3://${bucketName}/${tableName}/`
           }]
         },
-        name: `ticket-warehouse-${tableName}-${stage}`,
+        name: `${tablePrefix}${tableName}-${stage}`,
         tablePrefix: tablePrefix,
         schemaChangePolicy: {
           deleteBehavior: 'LOG'
