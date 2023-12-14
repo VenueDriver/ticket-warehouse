@@ -23,8 +23,9 @@ export class TicketWarehouseStack extends cdk.Stack {
 
     const stage = props.Stage;
 
-    // 1. Create the S3 bucket
+    // 1. Create the S3 buckets
     const ticketWarehouseBucket = new Bucket(this, `TicketWarehouseBucket-${stage}`);
+    const vaultBucket = new Bucket(this, `VaultArchiveBucket-${stage}`);
 
     // 2. Create a Ruby 3.2 Lambda function
     const ticketLambda = new Function(this, `TicketLambdaFunction-${stage}`, {
@@ -214,100 +215,111 @@ export class TicketWarehouseStack extends cdk.Stack {
     });
     athenaDatabase.node.addDependency(athenaWorkgroup);
     
-    const eventsCrawler = new glue.CfnCrawler(this, `EventsCrawler-${stage}`, {
-      databaseName: athenaDatabase.database,
-      role: glueCrawlerRole.roleArn,
-      targets: {
-        s3Targets: [{
-          path: `s3://${ticketWarehouseBucket.bucketName}/events/`
-        }]
-      },
-      name: `ticket-warehouse-events-${stage}`,
-      tablePrefix: 'ticket_warehouse_',
-      schemaChangePolicy: {
-        deleteBehavior: 'LOG'
-      }
-    });
+    function createCrawler(stage: string, bucketName: string, tableName: string, tablePrefix: string): glue.CfnCrawler {
+      return new glue.CfnCrawler(this, `Crawler-${stage}-${tableName}`, {
+        databaseName: athenaDatabase.database,
+        role: glueCrawlerRole.roleArn,
+        targets: {
+          s3Targets: [{
+            path: `s3://${bucketName}/${tableName}/`
+          }]
+        },
+        name: `ticket-warehouse-${tableName}-${stage}`,
+        tablePrefix: tablePrefix,
+        schemaChangePolicy: {
+          deleteBehavior: 'LOG'
+        }
+      });
+    }
 
-    // Add a crawler for Orders data
-    const ordersCrawler = new glue.CfnCrawler(this, `OrdersCrawler-${stage}`, {
-      databaseName: athenaDatabase.database,
-      role: glueCrawlerRole.roleArn,
-      targets: {
-        s3Targets: [{
-          path: `s3://${ticketWarehouseBucket.bucketName}/orders/`
-        }]
-      },
-      name: `ticket-warehouse-orders-${stage}`,
-      tablePrefix: 'ticket_warehouse_',
-      schemaChangePolicy: {
-        deleteBehavior: 'LOG'
-      }
-    });
-    
-    // Add a crawler for Tickets data
-    const ticketsCrawler = new glue.CfnCrawler(this, `TicketsCrawler-${stage}`, {
-      databaseName: athenaDatabase.database,
-      role: glueCrawlerRole.roleArn,
-      targets: {
-        s3Targets: [{
-          path: `s3://${ticketWarehouseBucket.bucketName}/tickets/`
-        }]
-      },
-      name: `ticket-warehouse-tickets-${stage}`,
-      tablePrefix: 'ticket_warehouse_',
-      schemaChangePolicy: {
-        deleteBehavior: 'LOG'
-      }
-    });
+    const eventsCrawler = createCrawler(stage, ticketWarehouseBucket.bucketName, 'events', 'ticket_warehouse_');
+    const ordersCrawler = createCrawler(stage, ticketWarehouseBucket.bucketName, 'orders', 'ticket_warehouse_');
+    const ticketsCrawler = createCrawler(stage, ticketWarehouseBucket.bucketName, 'tickets', 'ticket_warehouse_');
+    const ticketTypesCrawler = createCrawler(stage, ticketWarehouseBucket.bucketName, 'ticket_types', 'ticket_warehouse_');
+    const checkinIDsCrawler = createCrawler(stage, ticketWarehouseBucket.bucketName, 'checkin_ids', 'ticket_warehouse_');
+    const stripeChargesCrawler = createCrawler(stage, ticketWarehouseBucket.bucketName, 'stripe_charges', 'ticket_warehouse_');
 
-    // Add a crawler for Ticket Types data
-    const ticketTypesCrawler = new glue.CfnCrawler(this, `TicketTypesCrawler-${stage}`, {
-      databaseName: athenaDatabase.database,
-      role: glueCrawlerRole.roleArn,
-      targets: {
-        s3Targets: [{
-          path: `s3://${ticketWarehouseBucket.bucketName}/ticket_types/`
-        }]
-      },
-      name: `ticket-warehouse-ticket-types-${stage}`,
-      tablePrefix: 'ticket_warehouse_',
-      schemaChangePolicy: {
-        deleteBehavior: 'LOG'
-      }
-    });
-    
-    // Add a crawler for Checkin IDs data
-    const checkinIDsCrawler = new glue.CfnCrawler(this, `CheckinIDsCrawler-${stage}`, {
-      databaseName: athenaDatabase.database,
-      role: glueCrawlerRole.roleArn,
-      targets: {
-        s3Targets: [{
-          path: `s3://${ticketWarehouseBucket.bucketName}/checkin_ids/`
-        }]
-      },
-      name: `ticket-warehouse-checkin-ids-${stage}`,
-      tablePrefix: 'ticket_warehouse_',
-      schemaChangePolicy: {
-        deleteBehavior: 'LOG'
-      }
-    });
-
-    // Add a crawler for Stripe data
-    const stripeChargesCrawler = new glue.CfnCrawler(this, `StripeChargesCrawler-${stage}`, {
-      databaseName: athenaDatabase.database,
-      role: glueCrawlerRole.roleArn,
-      targets: {
-        s3Targets: [{
-          path: `s3://${ticketWarehouseBucket.bucketName}/stripe_charges/`
-        }]
-      },
-      name: `ticket-warehouse-stripe-charges-${stage}`,
-      tablePrefix: 'ticket_warehouse_',
-      schemaChangePolicy: {
-        deleteBehavior: 'LOG'
-      }
-    });
+    const utilSchemaInfoCrawler = createCrawler(stage, vaultBucket.bucketName, 'util_schema_info', 'vault_');
+    const sevenroomsReservationsCrawler = createCrawler(stage, vaultBucket.bucketName, 'sevenrooms_reservations', 'vault_');
+    const hotspotContactsCrawler = createCrawler(stage, vaultBucket.bucketName, 'hotspot_contacts', 'vault_');
+    const dimTablesCrawler = createCrawler(stage, vaultBucket.bucketName, 'dim_tables', 'vault_');
+    const tableReservationBridgeCrawler = createCrawler(stage, vaultBucket.bucketName, 'table_reservation_bridge', 'vault_');
+    const dimMenuItemCrawler = createCrawler(stage, vaultBucket.bucketName, 'dim_menu_item', 'vault_');
+    const dimProfitCenterCrawler = createCrawler(stage, vaultBucket.bucketName, 'dim_profit_center', 'vault_');
+    const dimTerminalCrawler = createCrawler(stage, vaultBucket.bucketName, 'dim_terminal', 'vault_');
+    const factTransactionCrawler = createCrawler(stage, vaultBucket.bucketName, 'fact_transaction', 'vault_');
+    const dimTimeCrawler = createCrawler(stage, vaultBucket.bucketName, 'dim_time', 'vault_');
+    const factTransactionItemCrawler = createCrawler(stage, vaultBucket.bucketName, 'fact_transaction_item', 'vault_');
+    const personicxDetailsCrawler = createCrawler(stage, vaultBucket.bucketName, 'personicx_details', 'vault_');
+    const emailValidationsCrawler = createCrawler(stage, vaultBucket.bucketName, 'email_validations', 'vault_');
+    const fullContactBatchIdsCrawler = createCrawler(stage, vaultBucket.bucketName, 'full_contact_batch_ids', 'vault_');
+    const dimLearnedFromCrawler = createCrawler(stage, vaultBucket.bucketName, 'dim_learned_from', 'vault_');
+    const logKJBCrawler = createCrawler(stage, vaultBucket.bucketName, 'log_kjb', 'vault_');
+    const utilJobsCrawler = createCrawler(stage, vaultBucket.bucketName, 'util_jobs', 'vault_');
+    const logKTRCrawler = createCrawler(stage, vaultBucket.bucketName, 'log_ktr', 'vault_');
+    const dimArtistsCrawler = createCrawler(stage, vaultBucket.bucketName, 'dim_artists', 'vault_');
+    const postalCodesCrawler = createCrawler(stage, vaultBucket.bucketName, 'postal_codes', 'vault_');
+    const dimEventArtistBridgeCrawler = createCrawler(stage, vaultBucket.bucketName, 'dim_event_artist_bridge', 'vault_');
+    const trippleseatCommissionRatesCrawler = createCrawler(stage, vaultBucket.bucketName, 'trippleseat_commission_rates', 'vault_');
+    const dimUniqueHumansCrawler = createCrawler(stage, vaultBucket.bucketName, 'dim_unique_humans', 'vault_');
+    const hotpointActionsCrawler = createCrawler(stage, vaultBucket.bucketName, 'hotpoint_actions', 'vault_');
+    const dimCustomerCodesCrawler = createCrawler(stage, vaultBucket.bucketName, 'dim_customer_codes', 'vault_');
+    const dimCustomerCodeSetCustomerCodeBridgeCrawler = createCrawler(stage, vaultBucket.bucketName, 'dim_customer_code_set_customer_code_bridge', 'vault_');
+    const resdiaryBookingReasonsCrawler = createCrawler(stage, vaultBucket.bucketName, 'resdiary_booking_reasons', 'vault_');
+    const resdiaryPaymentsCrawler = createCrawler(stage, vaultBucket.bucketName, 'resdiary_payments', 'vault_');
+    const hotpointContactsCrawler = createCrawler(stage, vaultBucket.bucketName, 'hotpoint_contacts', 'vault_');
+    const daylightSavingsOffsetsCrawler = createCrawler(stage, vaultBucket.bucketName, 'daylight_savings_offsets', 'vault_');
+    const resdiaryBookingsCrawler = createCrawler(stage, vaultBucket.bucketName, 'resdiary_bookings', 'vault_');
+    const factTransactionTendersCrawler = createCrawler(stage, vaultBucket.bucketName, 'fact_transaction_tenders', 'vault_');
+    const dimContactsCrawler = createCrawler(stage, vaultBucket.bucketName, 'dim_contacts', 'vault_');
+    const geoIsoCountryCodesCrawler = createCrawler(stage, vaultBucket.bucketName, 'geo_iso_country_codes', 'vault_');
+    const dimVenuesCrawler = createCrawler(stage, vaultBucket.bucketName, 'dim_venues', 'vault_');
+    const dimCustomerCodeSetsCrawler = createCrawler(stage, vaultBucket.bucketName, 'dim_customer_code_sets', 'vault_');
+    const dimDateCrawler = createCrawler(stage, vaultBucket.bucketName, 'dim_date', 'vault_');
+    const nicknameSetsCrawler = createCrawler(stage, vaultBucket.bucketName, 'nickname_sets', 'vault_');
+    const dimEmployeeCrawler = createCrawler(stage, vaultBucket.bucketName, 'dim_employee', 'vault_');
+    const infoGenesisTenderLookupCrawler = createCrawler(stage, vaultBucket.bucketName, 'info_genesis_tender_lookup', 'vault_');
+    const dimStaffEmployeeCrawler = createCrawler(stage, vaultBucket.bucketName, 'dim_staff_employee', 'vault_');
+    const sevenroomsClientsCrawler = createCrawler(stage, vaultBucket.bucketName, 'sevenrooms_clients', 'vault_');
+    const sevenroomsPosTicketsCrawler = createCrawler(stage, vaultBucket.bucketName, 'sevenrooms_pos_tickets', 'vault_');
+    const sevenroomsPosTicketItemsCrawler = createCrawler(stage, vaultBucket.bucketName, 'sevenrooms_pos_ticket_items', 'vault_');
+    const vdReservationPaymentsCrawler = createCrawler(stage, vaultBucket.bucketName, 'vd_reservation_payments', 'vault_');
+    const resdiaryCustomersCrawler = createCrawler(stage, vaultBucket.bucketName, 'resdiary_customers', 'vault_');
+    const trippleseatLeadsCrawler = createCrawler(stage, vaultBucket.bucketName, 'trippleseat_leads', 'vault_');
+    const trippleseatContactsCrawler = createCrawler(stage, vaultBucket.bucketName, 'trippleseat_contacts', 'vault_');
+    const trippleseatEventsCrawler = createCrawler(stage, vaultBucket.bucketName, 'trippleseat_events', 'vault_');
+    const trippleseatEventTotalsCrawler = createCrawler(stage, vaultBucket.bucketName, 'trippleseat_event_totals', 'vault_');
+    const trippleseatAccountsCrawler = createCrawler(stage, vaultBucket.bucketName, 'trippleseat_accounts', 'vault_');
+    const trippleseatUsersCrawler = createCrawler(stage, vaultBucket.bucketName, 'trippleseat_users', 'vault_');
+    const trippleseatEventCustomFieldsCrawler = createCrawler(stage, vaultBucket.bucketName, 'trippleseat_event_custom_fields', 'vault_');
+    const resdiaryCustomerCodesCrawler = createCrawler(stage, vaultBucket.bucketName, 'resdiary_customer_codes', 'vault_');
+    const trippleseatLocationsCrawler = createCrawler(stage, vaultBucket.bucketName, 'trippleseat_locations', 'vault_');
+    const resdiaryBookingCodesCrawler = createCrawler(stage, vaultBucket.bucketName, 'resdiary_booking_codes', 'vault_');
+    const resdiaryBookingPromotionsCrawler = createCrawler(stage, vaultBucket.bucketName, 'resdiary_booking_promotions', 'vault_');
+    const resdiaryBookingTablesCrawler = createCrawler(stage, vaultBucket.bucketName, 'resdiary_booking_tables', 'vault_');
+    const sfdcExistingIdsCrawler = createCrawler(stage, vaultBucket.bucketName, 'sfdc_existing_ids', 'vault_');
+    const hotpointBoothMappingsCrawler = createCrawler(stage, vaultBucket.bucketName, 'hotpoint_booth_mappings', 'vault_');
+    const vdItinerariesCrawler = createCrawler(stage, vaultBucket.bucketName, 'vd_itineraries', 'vault_');
+    const wirelessSocialContactsCrawler = createCrawler(stage, vaultBucket.bucketName, 'wireless_social_contacts', 'vault_');
+    const eventFormsCrawler = createCrawler(stage, vaultBucket.bucketName, 'event_forms', 'vault_');
+    const openTableSyncGuestsCrawler = createCrawler(stage, vaultBucket.bucketName, 'open_table_sync_guests', 'vault_');
+    const openTableSyncReservationsCrawler = createCrawler(stage, vaultBucket.bucketName, 'open_table_sync_reservations', 'vault_');
+    const sfdcContactOptInsCrawler = createCrawler(stage, vaultBucket.bucketName, 'sfdc_contact_opt_ins', 'vault_');
+    const derivedSingleVenueFormSubscribersCrawler = createCrawler(stage, vaultBucket.bucketName, 'derived_single_venue_form_subscribers', 'vault_');
+    const formstackContactsCrawler = createCrawler(stage, vaultBucket.bucketName, 'formstack_contacts', 'vault_');
+    const sfdcPreferencesBackupsRedoCrawler = createCrawler(stage, vaultBucket.bucketName, 'sfdc_preferences_backups_redo', 'vault_');
+    const sfdcPreferencesBackupsCrawler = createCrawler(stage, vaultBucket.bucketName, 'sfdc_preferences_backups', 'vault_');
+    const venueDriverPendingPersonalInfoPurgesCrawler = createCrawler(stage, vaultBucket.bucketName, 'venue_driver_pending_personal_info_purges', 'vault_');
+    const venuedriverTicketRedemptionsCrawler = createCrawler(stage, vaultBucket.bucketName, 'venuedriver_ticket_redemptions', 'vault_');
+    const vdPackageTicketsTicketsCrawler = createCrawler(stage, vaultBucket.bucketName, 'vd_package_tickets_tickets', 'vault_');
+    const vdEventsPackageTicketsCrawler = createCrawler(stage, vaultBucket.bucketName, 'vd_events_package_tickets', 'vault_');
+    const stripeRefundsCrawler = createCrawler(stage, vaultBucket.bucketName, 'stripe_refunds', 'vault_');
+    const dimStripeChargesCrawler = createCrawler(stage, vaultBucket.bucketName, 'dim_stripe_charges', 'vault_');
+    const venuedriverTicketKindsCrawler = createCrawler(stage, vaultBucket.bucketName, 'venuedriver_ticket_kinds', 'vault_');
+    const dimEventCrawler = createCrawler(stage, vaultBucket.bucketName, 'dim_event', 'vault_');
+    const manifestDeliveryControlsCrawler = createCrawler(stage, vaultBucket.bucketName, 'manifest_delivery_controls', 'vault_');
+    const dimVdUsersCrawler = createCrawler(stage, vaultBucket.bucketName, 'dim_vd_users', 'vault_');
+    const factActionsCrawler = createCrawler(stage, vaultBucket.bucketName, 'fact_actions', 'vault_');
     
     /////////////
     // Outputs
