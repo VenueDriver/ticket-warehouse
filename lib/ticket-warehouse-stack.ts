@@ -308,6 +308,17 @@ export class TicketWarehouseStack extends cdk.Stack {
         deleteBehavior: 'LOG'
       }
     });
+
+    // Add dynamodb table for manifest_delivery_control
+    const manifestDeliveryControlTable = new cdk.aws_dynamodb.Table(this, `ManifestDeliveryControlTable-${stage}`, {
+      partitionKey: {
+        name: 'event_key',
+        type: cdk.aws_dynamodb.AttributeType.STRING
+      },
+      billingMode: cdk.aws_dynamodb.BillingMode.PAY_PER_REQUEST,
+      tableName: `manifest_delivery_control-${stage}`
+    });
+
     
     /////////////
     // Outputs
