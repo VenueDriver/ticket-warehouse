@@ -169,6 +169,11 @@ export class TicketWarehouseStack extends cdk.Stack {
       resources: [ticketWarehouseBucket.bucketArn, `${ticketWarehouseBucket.bucketArn}/*`]
     }));
 
+    glueCrawlerRole.addToPolicy(new iam.PolicyStatement({
+      actions: ['s3:GetObject', 's3:ListBucket'],
+      resources: [vaultBucket.bucketArn, `${vaultBucket.bucketArn}/*`]
+    }));
+
     const queryResultsSubfolder = 'athena-query-results/';
     const athenaRole = new iam.Role(this, `AthenaExecutionRole-${stage}`, {
       assumedBy: new iam.ServicePrincipal('athena.amazonaws.com'),
