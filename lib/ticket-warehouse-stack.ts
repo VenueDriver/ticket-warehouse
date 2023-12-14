@@ -320,7 +320,17 @@ export class TicketWarehouseStack extends cdk.Stack {
     const manifestDeliveryControlsCrawler = createCrawler(stage, vaultBucket.bucketName, 'manifest_delivery_controls', 'vault_');
     const dimVdUsersCrawler = createCrawler(stage, vaultBucket.bucketName, 'dim_vd_users', 'vault_');
     const factActionsCrawler = createCrawler(stage, vaultBucket.bucketName, 'fact_actions', 'vault_');
-    
+
+    // Add dynamodb table for manifest_delivery_control
+    const manifestDeliveryControlTable = new cdk.aws_dynamodb.Table(this, `ManifestDeliveryControlTable-${stage}`, {
+      partitionKey: {
+        name: 'event_key',
+        type: cdk.aws_dynamodb.AttributeType.STRING
+      },
+      billingMode: cdk.aws_dynamodb.BillingMode.PAY_PER_REQUEST,
+      tableName: `manifest_delivery_control-${stage}`
+    });
+
     /////////////
     // Outputs
     

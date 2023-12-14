@@ -6,31 +6,38 @@ require 'tzinfo'
 require_relative 'event_details.rb'
 require_relative 'now_in_pacific_time.rb'
 require_relative 'output_structs.rb'
+require_relative 'with_calculated_fields.rb'
 
 module Manifest
   class TicketRows
     include NowInPacificTime
-    attr_reader  :ticket_rows_symbolized
+    attr_reader  :ticket_rows_symbolized, :ticket_row_structs
 
     def initialize( ticket_rows_array )
       @ticket_rows_symbolized = ticket_rows_array.map do |data_hash|
         data_hash.transform_keys(&:to_sym)
       end
+
+      @ticket_row_structs = @ticket_rows_symbolized.map do |row|
+        Row.new(**row)
+      end
+      WithCalculatedFields.process!(@ticket_row_structs)
+
     end
 
     def output_struct
       json_hash = transformed_json
-      json_hash[:ticket_rows] = json_hash.delete(:ticket_rows).map do |row|
-        Row.new(**row)
-      end
+      json_hash[:ticket_rows] = @ticket_row_structs
 
       TopLevelStruct.new(**json_hash)
     end
     
+    # bar card pattern '%VIP%Bar%Card%'
     def transformed_json
       ticket_rows = self.ticket_rows_symbolized
-      event_description = EventDetails.find_event_description(ticket_rows)
-      totals = EventDetails.find_totals(ticket_rows)
+      ticket_row_structs = self.ticket_row_structs
+      event_description = EventDescription.calculate(ticket_row_structs)
+      totals = EventTotals.calculate(ticket_row_structs)
 
       {
         event_date: event_description.event_date,
@@ -40,6 +47,10 @@ module Manifest
         total_sold: totals.total_sold,
         total_face_value: totals.total_face_value,
         total_let: totals.total_let,
+        total_bar_card: totals.total_bar_card,
+
+        total_sales_tax: totals.total_sales_tax,
+        total_venue_fee: totals.total_venue_fee,
 
         ticket_rows: ticket_rows,
         event_id: event_description.event_id,

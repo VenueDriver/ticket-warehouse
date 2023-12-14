@@ -336,6 +336,11 @@
           <td><%= data.display_date  %> </td>    
         </tr>
 
+        <tr class="striped-NO">
+          <th align="right">Venue Fee </th> 
+          <td align="left"><b><%= data.total_venue_fee  %></b></td>
+        </tr>
+
       </table>
     </div>
     
@@ -350,7 +355,7 @@
         
         <tr class="striped-NO">
           <th align="right">Total Face Value Bar Revenue</th> 
-          <td align="left"><b> Not Available</b></td>
+          <td align="left"><b> <%= data.total_bar_card  %></b></td>
         </tr>
         
 
@@ -362,6 +367,11 @@
         <tr class="striped-NO">
           <th align="right">Total LET</th> 
           <td align="left"><b><%= data.total_let  %></b></td>
+        </tr>
+
+        <tr class="striped-NO">
+          <th align="right">Total Sales Tax</th> 
+          <td align="left"><b><%= data.total_sales_tax  %></b></td>
         </tr>
   
       </table>
@@ -381,6 +391,8 @@
           <th class="number">Total<br>Bar<br>Revenue</th>
           <th class="number">Total<br>Admission<br>Revenue</th>
           <th class="number">Total<br>LET</th>
+          <th class="number">Total<br>Sales Tax</th>
+          <th class="number">Total<br>Venue Fee</th>
 
         </tr>
       
@@ -395,9 +407,11 @@
           <td class="number"><%= single_row.per_ticket_let  %>
           </td>
           <td class="number"><%= single_row.quantity  %></td>
-          <td class="number"> BAR CARD </td>
-          <td class="number"><%= single_row.total_face_value  %></td>
-          <td class="number"><%= single_row.total_let  %></td>
+          <td class="number"> <%= single_row.sum_bar_card  %></td>
+          <td class="number"><%= single_row.subtotal_minus_bar_card  %></td>
+          <td class="number"><%= single_row.sum_let_tax  %></td>
+          <td class="number"><%= single_row.sum_sales_tax  %></td>
+          <td class="number"><%= single_row.sum_venue_fee  %></td>
           
         </tr>
 
@@ -409,9 +423,11 @@
         <td class="number"></td>
         <td class="number"></td>
         <td class="number"><b><%= data.total_sold  %></b></td>
-        <td class="number"><b> BAR_CARD </b></td>
+        <td class="number"><b> <%= data.total_bar_card %></b></td>
         <td class="number"><b><%= data.total_face_value  %></b></td>
         <td class="number"><b><%= data.total_let  %></b></td>
+        <td class="number"><b><%= data.total_sales_tax  %></b></td>
+        <td class="number"><b><%= data.total_venue_fee  %></b></td>
       </tr>
       </table>
       
