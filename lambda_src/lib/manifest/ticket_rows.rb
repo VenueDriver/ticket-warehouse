@@ -39,7 +39,7 @@ module Manifest
       event_description = EventDescription.calculate(ticket_row_structs)
       totals = EventTotals.calculate(ticket_row_structs)
 
-      {
+     h = {
         event_date: event_description.event_date,
         venue: event_description.venue,
         event_title: event_description.event_title,
@@ -57,9 +57,15 @@ module Manifest
 
         now_in_pacific_time: now_in_pacific_time,
         
-        label_as_final: true,
+        label_as_final: false,
+
         display_date: event_description.display_date,
+
+        filename_full: event_description.filename_full,
+        email_subject_with_open_time: event_description.email_subject_with_open_time,
       }
+      #pp h 
+      h
     end
 
   end

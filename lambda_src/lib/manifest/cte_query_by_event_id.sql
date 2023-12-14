@@ -4,6 +4,7 @@ select tw_events.event.location  as ev_location
 , tw_events.event.id  as event_id
 , tw_events.event.name  as event_name
 , date( date_parse(tw_events.event.start, '%Y-%m-%d %H:%i:%s') ) as event_date
+, date_parse(tw_events.event.start, '%Y-%m-%d %H:%i:%s')  as event_open_time
 , tw_tickets.name as ticket_name
 , tw_tickets.id as ticket_id
 , coalesce( CAST( tw_tickets.price     as DECIMAL(10,2) ), decimal '0.00' ) as price
@@ -22,6 +23,7 @@ select ev_location as venue
 , event_id
 , event_name as event 
 , event_date
+, event_open_time
 , ticket_name
 , price as price
 , surcharge as surcharge
@@ -42,6 +44,7 @@ ev_location
 , event_id
 , event_name
 , event_date
+, event_open_time
 , ticket_name
 , price
 , surcharge

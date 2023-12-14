@@ -3,6 +3,11 @@ require_relative 'dev_query.rb'
 require_relative 'omnia_data_rows_example.rb'
 require_relative 'ticket_rows.rb'
 require_relative 'report_demo.rb'
+require_relative 'chrome_helper.rb'
+require_relative 'render_pdf.rb'
+
+require 'aws-sdk-ses'
+
 require 'erb'
 
 module Manifest
