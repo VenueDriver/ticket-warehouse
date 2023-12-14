@@ -1,0 +1,498 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml"
+  xmlns:o="urn:schemas-microsoft-com:office:office">
+
+  <head>
+    <!--[if gte mso 9]><xml>
+    <o:OfficeDocumentSettings>
+    <o:AllowPNG/>
+    <o:PixelsPerInch>96</o:PixelsPerInch>
+    </o:OfficeDocumentSettings>
+    </xml><![endif]-->
+    <title>Ticket Sales Manifest</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0 " />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!--[if !mso]><!-->
+    <style type="text/css">
+      @import url('https://fonts.googleapis.com/css2?family=Work+Sans:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+    </style>
+    <!--<![endif]-->
+
+    <style type="text/css">
+      body {
+        margin: 0 auto;
+        padding: 0;
+        -webkit-text-size-adjust: 100% !important;
+        -ms-text-size-adjust: 100% !important;
+        -webkit-font-smoothing: antialiased !important;
+        font-family: 'Work Sans', Arial, sans-serif;
+      }
+
+      tr.header h1,p {
+        color:#EAECF0;
+      }
+
+      img {
+        border: 0 !important;
+        outline: none !important;
+      }
+
+      h1 {
+        display: block;
+        font-size: 2em;
+        margin-block-start: 0.2em;
+        margin-block-end: 0.2em;
+        margin-inline-start: 0px;
+        margin-inline-end: 0px;
+        font-weight: bold;
+      }
+      h2 {
+        display: block;
+        font-size: 1.6em;
+        margin-block-start: 0.2em;
+        margin-block-end: 0.4em;
+        margin-inline-start: 0px;
+        margin-inline-end: 0px;
+        font-weight: bold;
+        color: #475467;
+      }
+      h3 {
+        display: block;
+        font-size: 1.4em;
+        margin-block-start: 0;
+        margin-block-end: 0;
+        margin-inline-start: 0px;
+        margin-inline-end: 0px;
+        font-weight: bold;
+        color: #475467;
+      }
+      h4 {
+        display: block;
+        font-size: 1.2em;
+        margin-block-start: 0;
+        margin-block-end: 0;
+        margin-inline-start: 0px;
+        margin-inline-end: 0px;
+        font-weight: bold;
+        color: #475467;
+      }
+      
+      h5 {
+        display: block;
+        font-size: 1.1em;
+        margin-block-start: 0;
+        margin-block-end: 0;
+        margin-inline-start: 0px;
+        margin-inline-end: 0px;
+        font-weight: bold;
+        color: #475467;
+      }
+      
+      h3.h_inline,h4.h_inline,h5.h_inline {
+        display:inline-block;
+      }
+      
+      h3.h_no_v_margin,h4.h_no_v_margin,h5.h_no_v_margin {
+        margin-top:0;
+        margin-bottom:0;
+      }
+
+
+      p {
+        Margin: 0px !important;
+        Padding: 0px !important;
+      }
+
+      table {
+        border-collapse: collapse;
+        mso-table-lspace: 0px;
+        mso-table-rspace: 0px;
+      }
+
+      .panel {
+        background-color: white;
+        margin-bottom: 2em;
+        padding: 1em;
+      }
+      .panel table {
+        width: 100%;
+        border-spacing: 10px;
+      }
+      
+      .panel .table-half {
+        display:inline-block;
+      }
+      
+      .panel table th {
+        color: #475467;
+        background-color: #EAECF0;
+        text-align: left;
+      }
+      .panel table th, .panel table td {
+        padding: 5px;
+        
+      }
+      
+      .panel.panel-ticket-rows table th, .panel.panel-ticket-rows table td.ticket_name {
+        letter-spacing: -0.5px;
+      }
+      
+      .panel table th {
+        background-color: #EAECF0;
+      }
+      .panel table tr.striped:nth-child(odd) {
+        background-color: #F2F4F7
+      }
+      .panel table tr.striped:nth-child(even) {
+        background-color: white;
+      }
+      .panel table tr.event_header {
+        vertical-align: bottom;
+        border-top: 3px solid #98A2B3;
+      /*        border-top-style: double;*/
+      }
+      .panel table tr.top {
+
+      }
+      .panel table tr.bottom {
+        border-top: 1px solid #98A2B3;
+        background-color: #EAECF0;
+        border-bottom: 3em solid white;
+      }
+      .panel table th.number {
+        text-align: right;
+      }
+      .panel table td.number {
+        text-align: right;
+      }
+      
+      .panel table th.th_right {
+        text-align: right;
+      }
+      
+      .panel table th.th_center {
+        text-align: center;
+      }
+      
+      .panel table th.th_left {
+        text-align: left;
+      }
+
+      td,
+      a,
+      span {
+        border-collapse: collapse;
+        mso-line-height-rule: exactly;
+      }
+      
+      .button {
+        font: bold 14px Arial;
+        text-decoration: none;
+        background-color: #EEEEEE;
+        color: #333333;
+        padding: 2px 6px 2px 6px;
+        border-top: 1px solid #CCCCCC;
+        border-right: 1px solid #333333;
+        border-bottom: 1px solid #333333;
+        border-left: 1px solid #CCCCCC;
+      }
+      
+    </style>
+  </head>
+
+  <body class="em_body" style="margin:0px auto; padding:0px;" bgcolor="#ffffff">
+    <!-- == Preview Text == -->
+    <div style="display:none;"> <% 'data.preview_text'  %></div>
+    <!-- == Body Section == -->
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" class="em_full_wrap" bgcolor="#ffffff"
+      style="table-layout:fixed;">
+      <tr>
+        <td align="center" valign="top">
+          <table align="center" width="900" border="0" cellspacing="0" cellpadding="0" class="em_main_table"
+            style="width:900px; table-layout:fixed;">
+            <tr>
+              <td align="center" valign="top">
+                <table width="100%" border="0" cellspacing="0" cellpadding="0" align="center"
+                  style="border-top: 1px solid #C3C4C4; border-left: 1px solid #C3C4C4; border-right: 1px solid #C3C4C4;">
+                  <tbody>
+                    <tr class="header">
+                      <td valign="top" align="center" bgcolor="#1F2730" style="background-color: #1F2730;">
+                        <table width="100%" border="0" cellspacing="0" cellpadding="0" align="center">
+                          <tbody>
+                            <tr>
+                              <td align="center" valign="top" width="19"
+                                style="width: 19px; font-size: 0px; line-height: 0px;" class="em_side20">&nbsp;</td>
+                              <td align="center" valign="top" style="padding: 20px 0px;" class="em_ptb1">
+                                <table width="100%" border="0" cellspacing="0" cellpadding="0" align="center">
+                                  <tbody>
+                                    <tr>
+                                      <td align="center" valign="top">
+                                        <table class="should_have_svg_inside" width="100%" border="0" cellspacing="0" cellpadding="0" align="center">
+                                          <tbody>
+                                            <tr>
+                                              <td align="center" valign="top">
+
+                                                  <svg width="239" height="50" viewBox="0 0 239 50" fill="none" xmlns="http://www.w3.org/2000/svg"><g clip-path="url(#clip0_198_1699)"><path d="M29.8442 37.1304L29.1379 41.1537H24.9165L25.6257 37.1304H29.8442Z" fill="#EAECF0" transform="scale(1)"></path><path d="M34.9037 8.42453L30.5506 33.1324H26.332L30.6852 8.42453H34.9037Z" fill="#EAECF0" transform="scale(1)"></path><path d="M54.7856 26.5562L57.2495 29.6489C57.2495 29.6489 53.3841 33.5569 47.6827 33.5569C40.2575 33.5569 36.5267 28.1925 36.5267 22.1561C36.5267 14.2135 43.2932 8 50.7801 8C57.0421 8 59.9292 11.8827 59.9292 11.8827L57.1486 14.6718C56.3236 13.8127 55.3345 13.1291 54.2403 12.662C53.1461 12.1949 51.9693 11.9537 50.7801 11.953C45.1124 11.953 40.891 16.7186 40.891 22.1561C40.891 26.1429 43.1334 29.6039 47.6827 29.6039C52.0106 29.6039 54.7856 26.5562 54.7856 26.5562Z" fill="#EAECF0" transform="scale(1)"></path><path d="M65.7398 19.1899L76.226 8.42453H81.7171L69.922 20.5676L78.5777 33.1324H73.4454L65.353 21.3436L63.3096 33.1324H59.0883L63.4161 8.42453H67.6403L65.7398 19.1899Z" fill="#EAECF0" transform="scale(1)"></path><path d="M87.2811 18.4505H97.1338L96.4302 22.4738H86.5748L85.4143 29.1091H96.3237L95.6202 33.1324H80.4838L84.8117 8.42453H99.7322L99.0286 12.4478H88.3351L87.2811 18.4505Z" fill="#EAECF0" transform="scale(1)"></path><path d="M140.956 16.4346H148.945C153.276 16.4346 155.986 19.2462 155.986 23.2836C155.983 25.2559 155.28 27.1628 154.004 28.6629C152.727 30.1629 150.959 31.1583 149.018 31.4708L153.556 41.1453H148.945L144.724 31.825H142.481L140.864 41.1453H136.634L140.956 16.4346ZM151.622 23.2836C151.622 21.4111 150.22 20.472 147.821 20.472H144.483L143.179 27.8158H146.523C149.545 27.8101 151.622 26.1148 151.622 23.292V23.2836Z" fill="#EAECF0" transform="scale(1)"></path><path d="M161.264 16.4346H165.486L161.158 41.1453H156.934L161.264 16.4346Z" fill="#EAECF0" transform="scale(1)"></path><path d="M140.956 16.4346H148.945C153.276 16.4346 155.983 19.2462 155.983 23.2836C155.98 25.2561 155.277 27.163 154 28.6635C152.724 30.1639 150.957 31.16 149.015 31.4736L153.556 41.1453H148.945L144.724 31.825H142.481L140.864 41.1453H136.634L140.956 16.4346ZM151.608 23.2836C151.608 21.4111 150.206 20.472 147.807 20.472H144.483L143.179 27.8158H146.523C149.545 27.8101 151.619 26.1148 151.619 23.292L151.608 23.2836Z" fill="#EAECF0" transform="scale(1)"></path><path d="M195.279 26.469H205.135L204.428 30.4924H194.576L193.415 37.1276H204.324L203.627 41.1537H188.49L192.815 16.4346H207.739L207.035 20.458H196.339L195.279 26.469Z" fill="#EAECF0" transform="scale(1)"></path><path d="M211.884 16.4346H219.884C224.212 16.4346 226.923 19.2462 226.923 23.2836C226.919 25.2561 226.216 27.163 224.939 28.6635C223.663 30.1639 221.896 31.16 219.954 31.4736L224.495 41.1453H219.884L215.652 31.8335H213.409L211.792 41.1537H207.551L211.884 16.4346ZM222.536 23.2836C222.536 21.4111 221.134 20.472 218.735 20.472H215.399L214.096 27.8158H217.445C220.473 27.8101 222.547 26.1148 222.547 23.292L222.536 23.2836Z" fill="#EAECF0" transform="scale(1)"></path><path d="M15.0471 12.4478L11.4227 33.1352H15.6469L19.2712 12.4478H26.063L26.7665 8.42453H8.95887L8.25531 12.4478H15.0471Z" fill="#EAECF0" transform="scale(1)"></path><path d="M10.7276 37.1304L10.0184 41.1537H14.2426L14.9461 37.1304H10.7276Z" fill="#EAECF0" transform="scale(1)"></path><path d="M135.917 27.0707C135.917 34.5157 131.028 41.1537 122.403 41.1537H32.3614L33.0705 37.1304H122.123C128.242 37.1304 131.519 32.2243 131.519 27.0707C131.519 23.3285 129.195 20.4664 125.041 20.4664H121.243L119.023 33.1352H114.801L117.725 16.4346H125.677C132.149 16.4346 135.917 21.248 135.917 27.0707Z" fill="#EAECF0" transform="scale(1)"></path><path d="M22.3994 37.1304L21.6902 41.1537H17.4717L18.178 37.1304H22.3994Z" fill="#EAECF0" transform="scale(1)"></path><path d="M102.86 8.42453H207.91L207.203 12.4478H113.173L109.551 33.1352H105.327L108.951 12.4478H102.157L102.86 8.42453Z" fill="#EAECF0" transform="scale(1)"></path><path d="M189.981 16.4431L174.464 42L167.955 16.4431H172.423L176.19 32.1877L185.267 16.4431H189.981Z" fill="#EAECF0" transform="scale(1)"></path><path d="M230.255 8.42453L229.546 12.4478H225.328L226.037 8.42453H230.255Z" fill="#EAECF0" transform="scale(1)"></path><path d="M211.139 8.42453L210.429 12.4478H214.654L215.357 8.42453H211.139Z" fill="#EAECF0" transform="scale(1)"></path><path d="M222.808 8.42453L222.101 12.4478H217.88L218.589 8.42453H222.808Z" fill="#EAECF0" transform="scale(1)"></path></g></svg>
+
+                                              </td>
+                                            </tr>
+                                            <tr>
+
+                                            </tr>
+                                            <tr>
+                                              <td align="center" valign="top">
+                                                <p style="color:#EAECF0;"><%= data.now_in_pacific_time %></p>
+
+                                                <% unless data.label_as_final  %>
+                                                  <p style="color:#EAECF0;">Preliminary  (event id placeholder)</p>
+                                                  
+                                              
+                                                  <p>
+                                                    ( No canceled event list yet)
+                                                  </p>
+                                                  
+                                                  <p style="color:#EAECF0;"> 
+                                                      (no cancel button yet)
+                                                  </p>
+                                                <% end  %>
+
+                                                
+                                              </td>
+                                              
+
+                                            </tr>
+                                            
+                                          </tbody>
+                                        </table>
+                                      </td>
+                                    </tr>
+                                  </tbody>
+                                </table>
+                              </td>
+                              <td align="center" valign="top" width="19"
+                                style="width: 19px; font-size: 0px; line-height: 0px;" class="em_side20">&nbsp;</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td valign="top" align="center" bgcolor="#EAECF0" style="background-color: #EAECF0;">
+                        <table width="100%" border="0" cellspacing="0" cellpadding="0" align="center">
+                          <tbody>
+                            <tr>
+                              <td align="center" valign="top" width="19"
+                                style="width: 19px; font-size: 0px; line-height: 0px;" class="em_side20">&nbsp;</td>
+                              <td align="center" valign="top" style="padding-top: 10px; padding-bottom: 10px;"
+                                class="em_ptop30 em_pbottomx">
+                                <table width="100%" border="0" cellspacing="0" cellpadding="0" align="center">
+                                  <tbody>
+                                    <tr>
+                                      <td align="center" valign="top">
+                                        <table width="100%" border="0" cellspacing="0" cellpadding="0" align="center">
+                                          <tbody>
+                                            <tr>
+                                              <td align="left" valign="top" class="em_defaultlink em_f14_20"
+                                                style="font-family: 'Work Sans', Arial, sans-serif; color: #131819;font-size: 14px;font-weight: 400;">
+
+<!-- <h2 align="center">{{data.event_title}} {{data.event_date}} </h2>   -->  
+  
+  <% if data.label_as_final %>
+    <h2 align="center">Final Ticket Sales Manifest <%= data.display_date %> </h2>     
+  <% else %>
+    <h2 align="center">Ticket Sales Manifest <%= data.display_date %> </h2>  
+  <% end %>
+  
+  
+                        
+  <div class="panel">
+
+    
+    <div class="table-half">
+      <table width="100%">
+
+        <tr class="striped-NO">
+          <th align="right">Event Title</th>
+          <td><%= data.event_title  %></td>
+          <td></td>
+        </tr>
+      
+        <tr class="striped-NO">
+          <th align="right">Account</th>
+          <td>Tao Group Hospitality</td>
+        </tr>
+      
+        <tr class="striped-NO">
+          <th align="right">Venue</th>
+          <td><%= data.venue  %> </td>
+        </tr>
+      
+        <tr class="striped-NO">
+          <th align="right">Date</th>
+          <td><%= data.display_date  %> </td>    
+        </tr>
+
+        <tr class="striped-NO">
+          <th align="right">Venue Fee </th> 
+          <td align="left"><b><%= data.total_venue_fee  %></b></td>
+        </tr>
+
+      </table>
+    </div>
+    
+    <div class="table-half">
+      <table width="100%">
+
+        <tr class="striped-NO">
+          <th align="right">Total Tickets Sold</th> 
+          <td align="left"><b><%= data.total_sold  %></b></td>
+        </tr>
+
+        
+        <tr class="striped-NO">
+          <th align="right">Total Face Value Bar Revenue</th> 
+          <td align="left"><b> <%= data.total_bar_card  %></b></td>
+        </tr>
+        
+
+        <tr class="striped-NO">
+          <th align="right">Total Face Value Admission Revenue</th> 
+          <td align="left"><b><%= data.total_face_value  %></b></td>
+        </tr>
+
+        <tr class="striped-NO">
+          <th align="right">Total LET</th> 
+          <td align="left"><b><%= data.total_let  %></b></td>
+        </tr>
+
+        <tr class="striped-NO">
+          <th align="right">Total Sales Tax</th> 
+          <td align="left"><b><%= data.total_sales_tax  %></b></td>
+        </tr>
+  
+      </table>
+    </div>
+  </div>  
+  
+
+    <div class="panel panel-ticket-rows">
+      <!-- type, price, per_ticket_let, QTY SOLD, Total Bar, Total Admission, Total Let -->
+      <table>
+      
+        <tr class="top">
+          <th colspan="2" class='th_right'>Type</th>
+          <th class="number">Price</th>
+          <th class="number">Per<br>Ticket<br>LET</th>
+          <th class="number">QTY</th>
+          <th class="number">Total<br>Bar<br>Revenue</th>
+          <th class="number">Total<br>Admission<br>Revenue</th>
+          <th class="number">Total<br>LET</th>
+          <th class="number">Total<br>Sales Tax</th>
+          <th class="number">Total<br>Venue Fee</th>
+
+        </tr>
+      
+      <% data.ticket_rows.each do |single_row| %>
+        <tr class="striped">
+          <td class ="ticket_name" colspan="2" align="right">
+            <%= single_row.ticket_name  %>
+          
+          </td>
+
+          <td class="number"><%= single_row.price  %></td>
+          <td class="number"><%= single_row.per_ticket_let  %>
+          </td>
+          <td class="number"><%= single_row.quantity  %></td>
+          <td class="number"> <%= single_row.sum_bar_card  %></td>
+          <td class="number"><%= single_row.subtotal_minus_bar_card  %></td>
+          <td class="number"><%= single_row.sum_let_tax  %></td>
+          <td class="number"><%= single_row.sum_sales_tax  %></td>
+          <td class="number"><%= single_row.sum_venue_fee  %></td>
+          
+        </tr>
+
+
+      <% end  %>
+      
+      <tr class="bottom">
+        <td class ="ticket_name" colspan="2" align="right"></td>
+        <td class="number"></td>
+        <td class="number"></td>
+        <td class="number"><b><%= data.total_sold  %></b></td>
+        <td class="number"><b> <%= data.total_bar_card %></b></td>
+        <td class="number"><b><%= data.total_face_value  %></b></td>
+        <td class="number"><b><%= data.total_let  %></b></td>
+        <td class="number"><b><%= data.total_sales_tax  %></b></td>
+        <td class="number"><b><%= data.total_venue_fee  %></b></td>
+      </tr>
+      </table>
+      
+    </div>    
+
+
+
+                                              </td>
+                                            </tr>
+                                          </tbody>
+                                        </table>
+                                      </td>
+                                    </tr>
+                                  </tbody>
+                                </table>
+                              </td>
+                              <td align="center" valign="top" width="19"
+                                style="width: 19px; font-size: 0px; line-height: 0px;" class="em_side19">&nbsp;</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+    <!-- == //Body Section == -->
+    <!-- == Footer Section == -->
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" class="em_full_wrap" bgcolor="#ffffff"
+      style="table-layout:fixed;">
+      <tr>
+        <td align="center" valign="top">
+          <table align="center" width="900" border="0" cellspacing="0" cellpadding="0" class="em_main_table"
+            style="width:900px; table-layout:fixed;">
+            <tr>
+              <td align="center" valign="top" bgcolor="#1F2730"
+                style="background-color: #1F2730; padding: 40px 40px 43px 40px;">
+                <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                  <tbody>
+                    <tr>
+                      <td align="center" valign="middle">
+                        <a href="#" style="text-decoration:none;" target="_blank" id="logo"><img alt="TICKET DRIVER" border="0"  src="https://assets.venuedriver.com/ticket-driver/ticket_driver_logo.png" style="display:block; max-width:74px; font-family: Arial, sans-serif; font-size:30px; color:#333333; font-weight:bold;" width="74"/></a>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td class="em_hide" style="line-height:1px;min-width:600px;background-color:#000000;"><img alt=""
+                  src="images/spacer.gif" height="1" width="900"
+                  style="max-height:1px; min-height:1px; display:block; width:600px; min-width:600px;" border="0" />
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+    <!-- == //Footer Section == -->
+  </body>
+
+</html>
+
