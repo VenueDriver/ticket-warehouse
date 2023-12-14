@@ -4,6 +4,8 @@ module Manifest
     :total_sold, :total_face_value, :total_let, :ticket_rows, 
     :now_in_pacific_time, :total_bar_card,
     :total_sales_tax, :total_venue_fee, 
+    :event_open_time,
+    :filename_full, :email_subject_with_open_time,
     :event_id, :event_key, :label_as_final, :display_date, keyword_init: true) do
       def get_binding
         data = self
@@ -28,6 +30,7 @@ module Manifest
       :quantity, :sum_subtotal, :sum_surcharge, 
       :sum_let_tax, :let_tax_rate_observed, 
       :sum_sales_tax , :sum_venue_fee,
+      :event_open_time,
       # calculated fields
       :sum_bar_card, :subtotal_minus_bar_card,
 
