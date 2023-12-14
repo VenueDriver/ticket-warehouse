@@ -60,9 +60,15 @@ export class TicketWarehouseStack extends cdk.Stack {
         'athena:ListNamedQueries',
         'athena:StartQueryExecution',
         'athena:GetQueryExecution',
+        'athena:GetQueryResults',
+        'glue:GetDatabase',
         'glue:CreateDatabase',
         'glue:CreateTable',
+        'glue:GetTable',
+        'glue:GetPartitions',
+        'glue:BatchCreatePartition',
         'glue:startCrawler',
+        'ssm:GetParameter'
       ],
       resources: ['*'],
     }));
@@ -216,7 +222,7 @@ export class TicketWarehouseStack extends cdk.Stack {
           path: `s3://${ticketWarehouseBucket.bucketName}/events/`
         }]
       },
-      name: `ticket-warehouse-events-crawler-${stage}`,
+      name: `ticket-warehouse-events-${stage}`,
       tablePrefix: 'ticket_warehouse_',
       schemaChangePolicy: {
         deleteBehavior: 'LOG'
@@ -232,7 +238,7 @@ export class TicketWarehouseStack extends cdk.Stack {
           path: `s3://${ticketWarehouseBucket.bucketName}/orders/`
         }]
       },
-      name: `ticket-warehouse-orders-crawler-${stage}`,
+      name: `ticket-warehouse-orders-${stage}`,
       tablePrefix: 'ticket_warehouse_',
       schemaChangePolicy: {
         deleteBehavior: 'LOG'
@@ -248,13 +254,29 @@ export class TicketWarehouseStack extends cdk.Stack {
           path: `s3://${ticketWarehouseBucket.bucketName}/tickets/`
         }]
       },
-      name: `ticket-warehouse-tickets-crawler-${stage}`,
+      name: `ticket-warehouse-tickets-${stage}`,
       tablePrefix: 'ticket_warehouse_',
       schemaChangePolicy: {
         deleteBehavior: 'LOG'
       }
     });
 
+    // Add a crawler for Ticket Types data
+    const ticketTypesCrawler = new glue.CfnCrawler(this, `TicketTypesCrawler-${stage}`, {
+      databaseName: athenaDatabase.database,
+      role: glueCrawlerRole.roleArn,
+      targets: {
+        s3Targets: [{
+          path: `s3://${ticketWarehouseBucket.bucketName}/ticket_types/`
+        }]
+      },
+      name: `ticket-warehouse-ticket-types-${stage}`,
+      tablePrefix: 'ticket_warehouse_',
+      schemaChangePolicy: {
+        deleteBehavior: 'LOG'
+      }
+    });
+    
     // Add a crawler for Checkin IDs data
     const checkinIDsCrawler = new glue.CfnCrawler(this, `CheckinIDsCrawler-${stage}`, {
       databaseName: athenaDatabase.database,
@@ -264,13 +286,40 @@ export class TicketWarehouseStack extends cdk.Stack {
           path: `s3://${ticketWarehouseBucket.bucketName}/checkin_ids/`
         }]
       },
-      name: `ticket-warehouse-checkin-ids-crawler-${stage}`,
+      name: `ticket-warehouse-checkin-ids-${stage}`,
       tablePrefix: 'ticket_warehouse_',
       schemaChangePolicy: {
         deleteBehavior: 'LOG'
       }
     });
 
+    // Add a crawler for Stripe data
+    const stripeChargesCrawler = new glue.CfnCrawler(this, `StripeChargesCrawler-${stage}`, {
+      databaseName: athenaDatabase.database,
+      role: glueCrawlerRole.roleArn,
+      targets: {
+        s3Targets: [{
+          path: `s3://${ticketWarehouseBucket.bucketName}/stripe_charges/`
+        }]
+      },
+      name: `ticket-warehouse-stripe-charges-${stage}`,
+      tablePrefix: 'ticket_warehouse_',
+      schemaChangePolicy: {
+        deleteBehavior: 'LOG'
+      }
+    });
+
+    // Add dynamodb table for manifest_delivery_control
+    const manifestDeliveryControlTable = new cdk.aws_dynamodb.Table(this, `ManifestDeliveryControlTable-${stage}`, {
+      partitionKey: {
+        name: 'event_key',
+        type: cdk.aws_dynamodb.AttributeType.STRING
+      },
+      billingMode: cdk.aws_dynamodb.BillingMode.PAY_PER_REQUEST,
+      tableName: `manifest_delivery_control-${stage}`
+    });
+
+    
     /////////////
     // Outputs
     

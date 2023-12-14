@@ -11,12 +11,15 @@ module Manager
         raise "TICKETSAUCE_CLIENT_ID and TICKETSAUCE_CLIENT_SECRET must be set in the environment."
       end
 
+      # StripeArchiver.new.archive_charges(time_range:time_range)
+
       warehouse = TicketWarehouse.new(
         client_id:     ENV['TICKETSAUCE_CLIENT_ID'],
         client_secret: ENV['TICKETSAUCE_CLIENT_SECRET']
       )
       warehouse.authenticate!
       warehouse.archive_events(time_range:time_range, num_threads:threads)
+      
     end
 
   end

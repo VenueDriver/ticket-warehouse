@@ -1,10 +1,7 @@
 require 'json'
 
-require_relative 'ticket-warehouse'
-
 def lambda_handler(event:, context:)
   puts "Received event: #{JSON.pretty_generate(event)}"
-  puts "Lambda context: #{JSON.pretty_generate(context.to_h)}"
 
   # Trigger the Glue crawlers to update the Athena tables.
   glue_client = Aws::Glue::Client.new(region: 'us-east-1')
@@ -13,6 +10,7 @@ def lambda_handler(event:, context:)
     'ticket-warehouse-events-crawler',
     'ticket-warehouse-orders-crawler',
     'ticket-warehouse-tickets-crawler',
+    'ticket-warehouse-ticket-types-crawler',
     'ticket-warehouse-checkin-ids-crawler'
   ].each do |crawler_name|
     glue_client.start_crawler(name: crawler_name)

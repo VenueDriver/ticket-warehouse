@@ -1,58 +1,101 @@
 # Ticket Warehouse
 
-A serverless data lake for warehousing Ticketsauce API data and analyzing it.
+Ticket Warehouse is a serverless data lake designed for warehousing and analyzing Ticketsauce API data. Utilizing AWS Lambda and Glue for ETL, AWS Athena for querying, and Quicksight for business intelligence, this project leverages the power of AWS for efficient data management. Infrastructure is managed as code using AWS CDK/CloudFormation.
 
-Leverages AWS Lambda and Glue for ETL, AWS Athena for querying the data, and Quicksight for BI.  Also uses Lambda functions to generate and schedule custom reports.
+## Architecture
 
-Uses AWS CDK/CloudFormation for IaC.
+### ELT Data Flow for Ticket Warehouse
+
+In our ELT (Extract, Load, Transform) data flow, we embrace a modern approach that enhances efficiency by transforming data post-loading. This process begins with extracting data from both the Ticketsauce and Stripe APIs, utilizing AWS Lambda for the initial data retrieval. The extracted data is then loaded directly into Amazon S3 as JSON archives. Unlike traditional ETL processes, where transformation occurs before loading, our system leverages AWS Athena to transform the data after it is stored in S3. This approach allows for more flexibility and efficiency in handling large datasets. Finally, the transformed data is made queryable and accessible through AWS Quicksight, enabling advanced data querying and visualization, thereby providing insightful business intelligence.
+
+```mermaid
+graph TB
+    A[Ticketsauce API] -->|Extract data| B[AWS Lambda]
+    H[Stripe API] -->|Extract data| B
+    B -->|Load JSON archive data to S3| D[Amazon S3]
+    D -->|Transform data| E[AWS Athena]
+    E -->|Query data| F[AWS Quicksight]
+
+    style A fill:#F4A9D4,stroke:#F4A9D4,stroke-width:2px
+    style H fill:#BFA2DB,stroke:#BFA2DB,stroke-width:2px
+    style B fill:#85C1E9,stroke:#85C1E9,stroke-width:2px
+    style D fill:#BFA2DB,stroke:#BFA2DB,stroke-width:2px
+    style E fill:#F4A9D4,stroke:#F4A9D4,stroke-width:2px
+    style F fill:#85C1E9,stroke:#85C1E9,stroke-width:2px
+```
+
+### Infrastructure management
+
+```mermaid
+graph TB
+    human[human operator] -->|manually manages| quicksight[AWS Quicksight]
+    CDK[AWS CDK/CloudFormation] -->|manages| resources[AWS Lambda function, AWS Glue crawlers, Amazon S3 bucket]
+    manager[manager.rb] -->|manages| glue[AWS Glue] -->|manages| athena[AWS Athena tables]
+    manager -->|manages| quicksight_resources[Quicksight Data Source & Datasets]
+    human -->|runs| CDK
+    human -->|runs| manager
+    human -->|authors| visualizations[Quicksight Visualizations & Dashboards]
+    
+    style human fill:#BFA2DB,stroke:#BFA2DB,stroke-width:2px
+    style CDK fill:#F4A9D4,stroke:#F4A9D4,stroke-width:2px
+    style manager fill:#F4A9D4,stroke:#F4A9D4,stroke-width:2px
+    style glue fill:#F4A9D4,stroke:#F4A9D4,stroke-width:2px
+    style athena fill:#85C1E9,stroke:#85C1E9,stroke-width:2px
+    style quicksight fill:#85C1E9,stroke:#85C1E9,stroke-width:2px
+    style resources fill:#85C1E9,stroke:#85C1E9,stroke-width:2px
+    style quicksight_resources fill:#85C1E9,stroke:#85C1E9,stroke-width:2px
+    style visualizations fill:#85C1E9,stroke:#85C1E9,stroke-width:2px
+```
+
 
 ## Setup
 
-### Step 1: Set up Quicksight in the AWS account.
+### Step 1: Use CDK/CloudFormation to create the serverles resources
 
-You might want to connect this to Active Directory for SSO or something for user management, but it needs to be done separately and manually.
+The Ticket Warehouse infrastructure consists of both pipeline and application stacks for multiple environments: staging, production, and development.
 
-### Step 2: Use CDK/CloudFormation to create the serverles resources
+* **Pipeline Stacks:** Deploy these stacks once. They orchestrate the deployment process across different AWS accounts and environments.
+* **Application Stacks:** These stacks contain the AWS resources for the Ticket Warehouse application. Deploy them for each respective environment (staging, production, development).
 
-    `cdk bootstrap`
-    `cdk deploy`
+Refer to the [Ticket Warehouse CDK Application](documentation/runbooks/ticket_warehouse_working_with_cdk.md) runbook for detailed instructions, including prerequisites and deployment commands for both pipeline and application stacks.
 
+### Step 2: Manual Initial Setup for Quicksight
 
-### Step 3: Use the CLI management script to create Quicksight analyses
+After deploying the infrastructure, manually configure Quicksight in your AWS account. This step is essential for the subsequent use of manager.rb.
 
-Quicksight data sources, data sets and analyses must be set up using the management script.
+### Step 3: Load Initial Data and Create Athena Tables using manager.rb
 
-## Management
+Use manager.rb to load initial data from Ticketsauce into the data lake and then crawl it to create Athena tables.
 
-You can use the `manager.rb` CLI tool to manage the data lake:
+```bash
+bundle exec ruby manager.rb load
+bundle exec ruby manager.rb crawl
+```
 
-    bundle exec ruby manager.rb help
+### Step 4: Set Up Quicksight Data Source and Datasets
 
-The tool supports these basic actions:
+After creating Athena tables, run manager.rb to set up the Quicksight data source and datasets.
 
-* purge - Delete everything in the S3 bucket and delete the Athena tables.
-* load - Load data from Ticketsauce to S3.
-* crawl - Crawl S3 data and create Athena tables.
-* reset - Purge, load, crawl.
+```bash
+bundle exec ruby manager.rb quicksight source
+bundle exec ruby manager.rb quicksight datasets
+```
 
-### Manually load data for any given time range
+### Step 5: Create Visualizations and Dashboards in Quicksight
+Finally, manually create visualizations and dashboards in Quicksight. This step involves designing the BI interface based on the datasets available in Quicksight.
 
-    bundle exec ruby manager.rb load --time-range=current
-    bundle exec ruby manager.rb load --time-range=upcoming
-    bundle exec ruby manager.rb load --time-range=all
+## Management with manager.rb
 
-### Run Glue crawlers
+`manager.rb`` streamlines management of the data lake:
 
-    bundle exec ruby manager.rb crawl
+`crawl`: Run Glue crawlers on the S3 data to create Athena tables.
+`load`: Load data from Ticketsauce into the S3 bucket.
+`purge`: Clear the S3 bucket and remove Athena tables.
+`quicksight`: Manage Quicksight resources.
+`reset`: Redo ETL and recreate Athena tables.
 
-### Purge whole data lake
+For detailed usage, refer to manager.rb help [COMMAND].
 
-Delete the contents of the S3 bucket and remove all derived Athena tables for this environment:
+## Runbooks
 
-    bundle exec ruby manager.rb purge
-
-### Reset whole data lake
-
-This will purge, then load, then crawl:
-
-    bundle exec ruby manager.rb reset
+- [Working with CDK](documentation/runbooks/ticket_warehouse_working_with_cdk.md)
