@@ -12,8 +12,11 @@ module Manifest
   class TicketRows
     include NowInPacificTime
     attr_reader  :ticket_rows_symbolized, :ticket_row_structs
+    attr_reader :report_variant
 
-    def initialize( ticket_rows_array )
+    def initialize( ticket_rows_array, report_variant = 'preliminary' )
+      @report_variant = report_variant
+      
       @ticket_rows_symbolized = ticket_rows_array.map do |data_hash|
         data_hash.transform_keys(&:to_sym)
       end
@@ -26,7 +29,7 @@ module Manifest
     end
 
     def output_struct
-      json_hash = transformed_json
+      json_hash = self.transformed_json_without_ticket_rows
       json_hash[:ticket_rows] = @ticket_row_structs
 
       TopLevelStruct.new(**json_hash)
@@ -34,37 +37,45 @@ module Manifest
     
     # bar card pattern '%VIP%Bar%Card%'
     def transformed_json
-      ticket_rows = self.ticket_rows_symbolized
-      ticket_row_structs = self.ticket_row_structs
-      event_description = EventDescription.calculate(ticket_row_structs)
-      totals = EventTotals.calculate(ticket_row_structs)
+      without_ticket_rows = self.transformed_json_without_ticket_rows
 
-     h = {
+      h = without_ticket_rows.merge(ticket_rows: @ticket_rows_symbolized )
+      
+      #pp h 
+      h
+    end
+    
+    def transformed_json_without_ticket_rows
+      ticket_row_structs = self.ticket_row_structs
+      
+      event_description = EventDescription.calculate(ticket_row_structs, report_variant_string:self.report_variant)
+      totals = EventTotals.calculate(ticket_row_structs)
+      
+      h = {
         event_date: event_description.event_date,
         venue: event_description.venue,
         event_title: event_description.event_title,
-
+        
         total_sold: totals.total_sold,
         total_face_value: totals.total_face_value,
         total_let: totals.total_let,
         total_bar_card: totals.total_bar_card,
-
+        
         total_sales_tax: totals.total_sales_tax,
         total_venue_fee: totals.total_venue_fee,
-
-        ticket_rows: ticket_rows,
+        
         event_id: event_description.event_id,
-
+        
         now_in_pacific_time: now_in_pacific_time,
         
         label_as_final: false,
-
+        
         display_date: event_description.display_date,
-
+        
         filename_full: event_description.filename_full,
         email_subject_with_open_time: event_description.email_subject_with_open_time,
       }
-      #pp h 
+
       h
     end
 
