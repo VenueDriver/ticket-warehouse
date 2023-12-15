@@ -8,6 +8,8 @@ require_relative 'render_pdf.rb'
 
 require 'aws-sdk-ses'
 
+require_relative 'ses_test.rb'
+
 require 'erb'
 
 module Manifest
