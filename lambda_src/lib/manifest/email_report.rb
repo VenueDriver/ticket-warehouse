@@ -36,7 +36,14 @@ module Manifest
       end
     end
 
-    def generate_message(sender:DEFAULT_SENDER, to_addresses:TO_ALL)
+    def send_ses_raw_email!(ses_client,**kw_args)
+      message = generate_message(**kw_args)
+      ses_client.send_raw_email({
+        raw_message: { data: message.encoded }
+      })
+    end
+
+    def generate_message(sender:DEFAULT_SENDER, to_addresses:DEFAULT_TO)
       process
 
       sender = Array(sender)
@@ -45,7 +52,7 @@ module Manifest
 
       html_content = self.render_step
       email_subject = output_structs.email_subject_with_open_time
-      pdf_filename = "#{output_structs.filename_full}.pdf"
+      
 
       message = MailFormat.generate_message(
         sender:sender,
@@ -55,12 +62,23 @@ module Manifest
         text_content: TEXT_CONTENT_3
       )
 
-      message.attachments[pdf_filename] = ChromeHelper::RenderPdf.generate_pdf(html_content)
+      pdf_filename, csv_filename = output_structs.filename_pdf, output_structs.filename_csv
+      message.attachments[pdf_filename] = self.generate_pdf_content(html_content)
+      message.attachments[csv_filename] = self.create_csv_string
 
       message
     end
 
     private
+
+    def generate_pdf_content(html_content)
+      ChromeHelper::RenderPdf.generate_pdf(html_content)
+    end
+
+    def create_csv_string
+      surcharge_csv = SurchargeCsv.new(@output_structs_step)
+      surcharge_csv.to_csv
+    end
 
     def on_tap(str)
       file_name = @output_structs_step.dev_file_name_full

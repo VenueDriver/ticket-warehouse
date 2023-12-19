@@ -13,6 +13,14 @@ module Manifest
         binding
       end
 
+      def filename_pdf
+        "#{self.filename_full}.pdf"
+      end
+
+      def filename_csv
+        "#{self.filename_full}.csv"
+      end
+
       def dev_file_path
         # want to use venue, event_date, event_title
         event_date_part = self.event_date.gsub('-', '_')
