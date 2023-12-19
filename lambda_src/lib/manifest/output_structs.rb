@@ -4,6 +4,7 @@ module Manifest
     :total_sold, :total_face_value, :total_let, :ticket_rows, 
     :now_in_pacific_time, :total_bar_card,
     :total_sales_tax, :total_venue_fee, 
+    :total_surcharge,
     :event_open_time,
     :filename_full, :email_subject_with_open_time,
     :event_id, :event_key, :label_as_final, :display_date, keyword_init: true) do

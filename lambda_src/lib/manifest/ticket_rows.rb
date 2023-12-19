@@ -63,6 +63,8 @@ module Manifest
         
         total_sales_tax: totals.total_sales_tax,
         total_venue_fee: totals.total_venue_fee,
+
+        total_surcharge: totals.total_surcharge,
         
         event_id: event_description.event_id,
         

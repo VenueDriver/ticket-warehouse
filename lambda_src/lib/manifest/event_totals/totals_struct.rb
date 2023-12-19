@@ -1,7 +1,7 @@
 module Manifest
   class EventTotals 
     Totals = Struct.new(:total_sold, :total_face_value, :total_let, :total_bar_card, 
-    :total_sales_tax, :total_venue_fee, keyword_init: true) do
+    :total_sales_tax, :total_venue_fee, :total_surcharge, keyword_init: true) do
       def self.start_with_zeros
         self.new(
           total_sold: 0,
@@ -9,7 +9,8 @@ module Manifest
           total_let: BigDecimal("0.00"),
           total_bar_card: BigDecimal("0.00"),
           total_sales_tax: BigDecimal("0.00"),
-          total_venue_fee: BigDecimal("0.00")
+          total_venue_fee: BigDecimal("0.00"),
+          total_surcharge: BigDecimal("0.00")
         )
       end
 
@@ -21,6 +22,7 @@ module Manifest
             total_bar_card: row_struct.sum_bar_card,
             total_sales_tax: row_struct.sum_sales_tax,
             total_venue_fee: row_struct.sum_venue_fee,
+            total_surcharge: row_struct.sum_surcharge
           )
       end
 
@@ -38,7 +40,8 @@ module Manifest
           total_let: BigDecimal(self.total_let),
           total_bar_card: BigDecimal(self.total_bar_card),
           total_sales_tax: BigDecimal(self.total_sales_tax),
-          total_venue_fee: BigDecimal(self.total_venue_fee)
+          total_venue_fee: BigDecimal(self.total_venue_fee),
+          total_surcharge: BigDecimal(self.total_surcharge)
         )
       end
 
@@ -50,7 +53,8 @@ module Manifest
           total_let: "%.2f" % self.total_let,
           total_bar_card: "%.2f" % self.total_bar_card,
           total_sales_tax: "%.2f" % self.total_sales_tax,
-          total_venue_fee: "%.2f" % self.total_venue_fee
+          total_venue_fee: "%.2f" % self.total_venue_fee,
+          total_surcharge: "%.2f" % self.total_surcharge
         )
       end
     end
