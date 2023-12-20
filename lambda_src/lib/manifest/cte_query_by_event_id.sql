@@ -39,6 +39,7 @@ select ev_location as venue
 
 from casted_data
 where (((true and true and true)))
+and price > decimal '0.00'
 group by 
 ev_location
 , event_id
