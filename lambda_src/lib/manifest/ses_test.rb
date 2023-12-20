@@ -5,7 +5,6 @@ require_relative 'email_report.rb'
 require_relative 'mail_format.rb'
 
 module Manifest
-  TEXT_CONTENT = "This is html_only"
   class SesTest
 
     class << self
