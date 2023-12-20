@@ -38,7 +38,7 @@ select ev_location as venue
 , sum( venue_fee )  as sum_venue_fee
 
 from casted_data
-where (((true and true and true)))
+where event_id = 'YOUR_EVENT_ID_HERE'
 and price > decimal '0.00'
 group by 
 ev_location
