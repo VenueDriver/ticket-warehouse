@@ -12,7 +12,7 @@ module Manifest
       'stephane.tousignant@taogroup.com',
     'ryan.porter@taogroup.com',
     ]
-    TEXT_CONTENT_3 = "This is html_only"
+    THIS_EMAIL_IS_HTML_ONLY = "This is html_only"
 
     def initialize(event_id, report_variant)
       @event_id = event_id
@@ -59,7 +59,7 @@ module Manifest
         to_addresses:to_addresses, 
         email_subject:email_subject, 
         html_content: html_content,
-        text_content: TEXT_CONTENT_3
+        text_content: THIS_EMAIL_IS_HTML_ONLY
       )
 
       pdf_filename, csv_filename = output_structs.filename_pdf, output_structs.filename_csv
