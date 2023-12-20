@@ -187,7 +187,12 @@ export class TicketWarehouseStack extends cdk.Stack {
                 "s3:ListBucket",
                 "s3:GetBucketLocation"
               ],
-              resources: [ticketWarehouseBucket.bucketArn, `${ticketWarehouseBucket.bucketArn}/*`]
+              resources: [
+                ticketWarehouseBucket.bucketArn, 
+                `${ticketWarehouseBucket.bucketArn}/*`,
+                vaultBucket.bucketArn,
+                `${vaultBucket.bucketArn}/*`
+              ]
             }),
           ],
         }),
