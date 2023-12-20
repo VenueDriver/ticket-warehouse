@@ -64,8 +64,8 @@ module Manifest
         variant_title:variant_title,
       )
 
-      puts "D: #{d.email_subject_with_open_time}"
-      puts "D: #{d.filename_without_variant}"
+      # puts "D: #{d.email_subject_with_open_time}"
+      # puts "D: #{d.filename_without_variant}"
       d
     end
 
