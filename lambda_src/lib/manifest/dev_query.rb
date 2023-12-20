@@ -14,10 +14,5 @@ module Manifest
       text = File.read( @file_path )
     end
 
-    private
-
-    def template_text
-      File.read( @file_path )
-    end
   end
 end
