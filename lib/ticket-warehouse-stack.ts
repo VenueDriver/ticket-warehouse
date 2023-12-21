@@ -341,6 +341,28 @@ export class TicketWarehouseStack extends cdk.Stack {
       tableName: `manifest_delivery_control-${stage}`
     });
 
+    // Add function for manifest_delivery_control
+    const manifestDeliveryControlFunction = new Function(this, `ManifestDeliveryControlFunction-${stage}`, {
+      runtime: Runtime.RUBY_3_2,
+      code: Code.fromAsset('lambda_src', {
+        bundling: {
+          image: Runtime.RUBY_3_2.bundlingImage,
+          command: [
+            'bash', '-c', [
+              'bundle install --path /asset-output/vendor/bundle',
+              'cp -au . /asset-output/'
+            ].join(' && ')
+          ],
+        }
+      }),
+      handler: 'manifest-report-handler.lambda_handler',
+      environment: {
+        'MANIFEST_DELIVERY_CONTROL_TABLE': manifestDeliveryControlTable.tableName
+      },
+      timeout: cdk.Duration.minutes(5),
+      memorySize: 1024,
+    });
+
     /////////////
     // Outputs
     
