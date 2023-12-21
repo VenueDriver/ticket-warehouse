@@ -6,18 +6,9 @@ module Manifest
 
     def on_event_id(event_id)
       text = File.read( @file_path )
-      replacement = "event_id ='#{event_id}'"
-      text.gsub!( '(((true and true and true)))', replacement )
+      replacement = event_id
+      text.gsub!( 'YOUR_EVENT_ID_HERE', replacement )
     end
 
-    def full_query
-      text = File.read( @file_path )
-    end
-
-    private
-
-    def template_text
-      File.read( @file_path )
-    end
   end
 end

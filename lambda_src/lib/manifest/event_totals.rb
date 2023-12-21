@@ -16,6 +16,7 @@ module Manifest
         running_total.total_bar_card += row.total_bar_card
         running_total.total_sales_tax += row.total_sales_tax
         running_total.total_venue_fee += row.total_venue_fee
+        running_total.total_surcharge += row.total_surcharge
       end
 
       running_total.apply_formatting
