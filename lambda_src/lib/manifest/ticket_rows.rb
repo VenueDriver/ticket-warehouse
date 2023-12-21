@@ -6,8 +6,11 @@ require_relative 'event_description.rb'
 require_relative 'event_totals.rb'
 
 require_relative 'now_in_pacific_time.rb'
-require_relative 'output_structs.rb'
+require_relative 'ticket_rows/top_level.rb' 
+require_relative 'ticket_rows/individual_row.rb'
+
 require_relative 'with_calculated_fields.rb'
+
 
 module Manifest
   class TicketRows
