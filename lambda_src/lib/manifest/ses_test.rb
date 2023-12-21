@@ -1,5 +1,7 @@
 require 'aws-sdk-ses'
 require 'mail'
+require 'erb'
+
 require_relative 'render_pdf.rb'
 require_relative 'email_report.rb'
 require_relative 'mail_format.rb'
