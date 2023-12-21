@@ -2,6 +2,7 @@ require_relative 'event_data_fetcher.rb'
 require_relative 'ticket_rows.rb'
 require_relative 'erb_template.rb'
 require_relative 'mail_format.rb'
+require_relative 'report_variants.rb'
 
 module Manifest
   class EmailReport
@@ -13,6 +14,20 @@ module Manifest
     'ryan.porter@taogroup.com',
     ]
     THIS_EMAIL_IS_HTML_ONLY = "This is html_only"
+
+    class << self
+      def make_preliminary(event_id)
+        self.new(event_id, ReportVariants::Preliminary.new) 
+      end
+
+      def make_final(event_id)
+        self.new(event_id, ReportVariants::Final.new)
+      end
+
+      def make_accounting(event_id)
+        self.new(event_id, ReportVariants::Accounting.new)
+      end
+    end
 
     def initialize(event_id, report_variant)
       @event_id = event_id
@@ -62,14 +77,26 @@ module Manifest
         text_content: THIS_EMAIL_IS_HTML_ONLY
       )
 
-      pdf_filename, csv_filename = output_structs.filename_pdf, output_structs.filename_csv
-      message.attachments[pdf_filename] = self.generate_pdf_content(html_content)
-      message.attachments[csv_filename] = self.create_csv_string
+      process_attachments(message, html_content:html_content, output_structs:output_structs)
 
       message
     end
 
     private
+
+    def process_attachments(message, html_content:, output_structs:)
+      pdf_filename, csv_filename = output_structs.filename_pdf, output_structs.filename_csv
+
+      if @report_variant.has_pdf?
+        message.attachments[pdf_filename] = self.generate_pdf_content(html_content)
+      end
+
+      if @report_variant.has_surcharge_csv?
+        message.attachments[csv_filename] = self.create_csv_string
+      end
+
+      message
+    end
 
     def generate_pdf_content(html_content)
       ChromeHelper::RenderPdf.generate_pdf(html_content)

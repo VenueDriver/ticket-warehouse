@@ -21,7 +21,7 @@ module Manifest
     class NullInputData < StandardError
     end
 
-    def initialize( ticket_rows_array, report_variant = 'preliminary' )
+    def initialize( ticket_rows_array, report_variant  )
       @report_variant = report_variant
 
       if ticket_rows_array.nil?
@@ -59,9 +59,9 @@ module Manifest
     def transformed_json_without_ticket_rows
       ticket_row_structs = self.ticket_row_structs
       
-      event_description = EventDescription.calculate(ticket_row_structs, report_variant_string:self.report_variant)
+      event_description = EventDescription.calculate(ticket_row_structs, report_variant: self.report_variant)
       totals = EventTotals.calculate(ticket_row_structs)
-      
+
       h = {
         event_date: event_description.event_date,
         venue: event_description.venue,
@@ -81,7 +81,7 @@ module Manifest
         
         now_in_pacific_time: now_in_pacific_time,
         
-        label_as_final: false,
+        label_as_final: self.report_variant.label_as_final?,
         
         display_date: event_description.display_date,
         

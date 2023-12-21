@@ -23,9 +23,9 @@ module Manifest
       end
     attr_reader :ticket_row_structs
 
-    def initialize(ticket_row_structs,report_variant_string:'PRELIMINARY')
+    def initialize(ticket_row_structs, report_variant:)
       @ticket_row_structs = ticket_row_structs
-      @report_variant_string = report_variant_string
+      @report_variant = report_variant
     end
 
     def calculate(variant_title_in = nil)
@@ -50,7 +50,6 @@ module Manifest
       event_open_time_string = first_struct.event_open_time
       open_time_parsed = DateTime.parse(event_open_time_string, '%F %H:%i:%s')
       subject_open_time_part = open_time_parsed.strftime("%I:%M%p")
-      variant_title = variant_title_in || @report_variant_string
 
       d = DescriptionStruct.new(venue: venue, 
         event_title: event_title, 
@@ -61,7 +60,7 @@ module Manifest
         filename_venue_part:filename_venue_part,
         subject_date_part:subject_date_part,
         subject_open_time_part:subject_open_time_part,
-        variant_title:variant_title,
+        variant_title:@report_variant.filename_prefix,
       )
 
       # puts "D: #{d.email_subject_with_open_time}"
@@ -69,9 +68,9 @@ module Manifest
       d
     end
 
-    def self.calculate(ticket_row_structs,report_variant_string:'PRELIMINARY')
+    def self.calculate(ticket_row_structs, report_variant: )
       self.new(ticket_row_structs,
-        report_variant_string:report_variant_string).calculate
+        report_variant:report_variant).calculate
     end
     
   end

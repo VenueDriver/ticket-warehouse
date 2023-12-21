@@ -4,12 +4,14 @@ require_relative 'ticket_rows.rb'
 require_relative 'chrome_helper.rb'
 require_relative 'render_pdf.rb'
 require_relative 'surcharge_csv.rb'
+require_relative 'report_variants.rb'
 
 require 'aws-sdk-ses'
 
 require_relative 'ses_test.rb'
+require_relative 'main.rb'
 
-require 'erb'
+
 
 module Manifest
 

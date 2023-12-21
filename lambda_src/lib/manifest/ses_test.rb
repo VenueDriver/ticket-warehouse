@@ -17,7 +17,9 @@ module Manifest
         aoki_id = '6552982d-5120-4e96-a0a4-4f7892144192'
         luxury_id = '655297f0-7e68-4e36-9911-515c92144192'
   
-        email_report = EmailReport.new(aoki_id, 'preliminary')
+        #email_report = EmailReport.make_preliminary(aoki_id)
+        email_report = EmailReport.make_accounting(aoki_id)
+        
   
         email_report.send_ses_raw_email!($ses_client,to_addresses:to_addresses)     
       end
