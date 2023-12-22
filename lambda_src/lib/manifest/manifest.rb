@@ -5,6 +5,7 @@ require_relative 'chrome_helper.rb'
 require_relative 'render_pdf.rb'
 require_relative 'surcharge_csv.rb'
 require_relative 'report_variants.rb'
+require_relative 'scheduling.rb'
 
 require 'aws-sdk-ses'
 
