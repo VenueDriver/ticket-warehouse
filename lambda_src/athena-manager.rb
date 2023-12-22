@@ -7,7 +7,7 @@ class AthenaManager
     @client = Aws::Athena::Client.new(region: 'us-east-1')
     @workgroup = "TicketWarehouse-#{env_in}"
     @database = "ticket_warehouse-#{env_in}"
-    @formatter = AthenaOutput::Original.new
+    @formatter = AthenaOutput::ArrayOfHashes.new
   end
 
   def repair_table(table_name)
