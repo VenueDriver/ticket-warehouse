@@ -4,7 +4,7 @@ require_relative 'candidate_event_row.rb'
 
 module Manifest
   class Scheduling 
-    class AthenaReader 
+    class CandidateEventReader 
       def initialize(env_in = ENV['ENV'])
         @athena_manager = AthenaManager.new(env_in)
       end

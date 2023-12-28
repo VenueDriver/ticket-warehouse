@@ -1,4 +1,4 @@
-require_relative 'athena_reader.rb'
+require_relative 'candidate_event_reader.rb'
 require_relative 'dynamo_helper.rb'
 
 
@@ -7,7 +7,7 @@ module Manifest
 
     class ReportSelector 
       def initialize(env_in = ENV['ENV'])
-        @athena_reader = AthenaReader.new(env_in)
+        @athena_reader = CandidateEventReader.new(env_in)
 
         @dynamo_db_client = Aws::DynamoDB::Client.new
         table_name = DEFAULT_DDB_TABLE_NAME

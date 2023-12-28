@@ -5,7 +5,7 @@ require_relative 'scheduling/events_query.rb'
 require_relative 'scheduling/report_selector.rb'
 require_relative 'scheduling/manager.rb'
 require_relative 'scheduling/athena_dynamo_join.rb'
-require_relative 'scheduling/athena_reader.rb'
+require_relative 'scheduling/candidate_event_reader.rb'
 require_relative 'scheduling/report_performer.rb'
 require_relative 'scheduling/delivery_bookkeeper.rb'
 
@@ -17,7 +17,7 @@ module Manifest
       ReportPerformer.to_s
       Manager.to_s
 
-      Scheduling::AthenaReader.test_me
+      Scheduling::CandidateEventReader.test_me
     end
 
   end
