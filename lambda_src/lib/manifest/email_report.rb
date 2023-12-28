@@ -48,9 +48,8 @@ module Manifest
 
       @output_structs_step = @ticket_rows_step.output_struct
 
-      @render_step = @erb_render_template.render(@output_structs_step).tap do |str|
-        on_tap( str )
-      end
+      @render_step = @erb_render_template.render(@output_structs_step)
+      @render_step
     end
 
     def send_ses_raw_email!(ses_client,**kw_args)
