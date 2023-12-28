@@ -44,7 +44,7 @@ module Manifest
   
     class EventIdWrapper
       attr_reader :event_id, :table_name
-      def initialize(event_id,table_name:)
+      def initialize(event_id, table_name:)
         @event_id = event_id
         @table_name = table_name
       end
@@ -110,7 +110,7 @@ module Manifest
       end
   
       # Uses UpdateItem
-      def mark_preliminary_sent(event_id, preliminary_sent_at:)
+      def mark_preliminary_sent(event_id)
         update_using(event_id) do |event_id_wrapper|
           event_id_wrapper.prelim_sent_update_expression(preliminary_sent_at: DateTime.now)
         end
@@ -174,6 +174,16 @@ module Manifest
         else
           return []
         end
+      end
+
+      def partition_event_by_exists_and_not_exists(event_ids)
+        control_rows = fetch_control_rows(event_ids)
+        control_rows = control_rows.map { |raw_dynamo_result| ControlRow.new(raw_dynamo_result) }
+      
+        event_ids_that_exist = control_rows.map(&:event_id)
+        event_ids_that_dont_exist = event_ids - event_ids_that_exist
+
+        [event_ids_that_exist, event_ids_that_dont_exist]
       end
   
       private
