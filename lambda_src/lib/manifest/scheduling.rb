@@ -8,6 +8,7 @@ require_relative 'scheduling/athena_dynamo_join.rb'
 require_relative 'scheduling/candidate_event_reader.rb'
 require_relative 'scheduling/report_performer.rb'
 require_relative 'scheduling/delivery_bookkeeper.rb'
+require_relative 'scheduling/simulator.rb'
 
 module Manifest
   class Scheduling 
@@ -18,6 +19,10 @@ module Manifest
       Manager.to_s
 
       Scheduling::CandidateEventReader.test_me
+    end
+
+    def self.create_simulator
+      Simulator.new
     end
 
   end
