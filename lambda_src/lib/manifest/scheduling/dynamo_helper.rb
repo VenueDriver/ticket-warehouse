@@ -39,13 +39,8 @@ module Manifest
       
       #uses BatchWriteItem
       def init_pending_reports(event_ids)
-  
-        puts "HERERERERERE"
         request_items = InitialRow.batch_CONTROL_INITIALIZED(event_ids, table_name: self.table_name)
         pp request_items
-
-        # param_validator.rb:35:in `validate!': expected params[:request_items] {:table_name=>"manifest_delivery_control-production"} key to be a String, got class Hash instead. (ArgumentError)
-
 
         # Perform the BatchWriteItem operation
         dynamodb.batch_write_item(request_items: request_items)
@@ -73,6 +68,21 @@ module Manifest
       def mark_final_sent(event_id)
         update_using(event_id) do |event_id_wrapper|  
           event_id_wrapper.final_sent_update_expression(final_sent_at: DateTime.now)
+        end
+      end
+
+      def delete_control_row(single_event_id)
+        begin
+          response = @dynamodb.delete_item({
+            table_name: self.table_name,
+            key: {
+              event_key: single_event_id
+            },
+          })
+          puts "Delete successful. Deleted event_key #{single_event_id}, attributes: #{response.attributes}"
+          response
+        rescue Aws::DynamoDB::Errors::ServiceError => e
+          puts "Error deleting item: #{e.message}"
         end
       end
   
