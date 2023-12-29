@@ -6,12 +6,16 @@ module Manifest
       end
 
       def event_id
-        #stub
+        @raw_dynamo_result["event_key"]
       end
 
       def report_status
-        #stub
+        @raw_dynamo_result["report_status"]
       end
+
+      # example
+      # [{"event_key"=>"fake_evvent_id_1", "report_status"=>"initialized"},
+      #  {"event_key"=>"fake_evvent_id_2", "report_status"=>"initialized"}]
     end
   end
 end
