@@ -4,19 +4,55 @@ require_relative 'dynamo_helper/event_id_wrapper.rb'
 require_relative 'dynamo_helper/base.rb'
 require_relative 'dynamo_helper/initial_row.rb'
 require_relative 'dynamo_helper/control_row.rb'
+require 'byebug'
 
 module Manifest
   class Scheduling
+
+    class InitialRow
+  
+      class << self
+        def batch_CONTROL_INITIALIZED(event_ids, table_name:)
+          
+          item_data = event_ids.map do |event_id|
+            {
+              event_key: event_id,
+              report_status: CONTROL_INITIALIZED
+            }
+          end
+  
+          put_requests = item_data.map do |single_item_data|
+            {put_request: { item:single_item_data}   }  
+          end
+  
+          request_items = {
+            table_name => put_requests
+          }
+          
+        end
+  
+      end
+    end
   
     class DynamoWriter < DynamoHelperBase
-  
+      # pending: deleting rows
+      
       #uses BatchWriteItem
       def init_pending_reports(event_ids)
   
+        puts "HERERERERERE"
         request_items = InitialRow.batch_CONTROL_INITIALIZED(event_ids, table_name: self.table_name)
-        
+        pp request_items
+
+        # param_validator.rb:35:in `validate!': expected params[:request_items] {:table_name=>"manifest_delivery_control-production"} key to be a String, got class Hash instead. (ArgumentError)
+
+
         # Perform the BatchWriteItem operation
         dynamodb.batch_write_item(request_items: request_items)
+      end
+
+      def create_batch_insert_request_items(event_ids)
+        InitialRow.batch_CONTROL_INITIALIZED(event_ids, table_name: self.table_name)
       end
   
       # Uses UpdateItem
@@ -100,6 +136,17 @@ module Manifest
             keys: keys_to_get
           }
         }
+      end
+    end
+
+    class DynamoHelper
+      def self.create_reader_and_writer(table_name = Scheduling::DEFAULT_DDB_TABLE_NAME)
+        dynamodb = Aws::DynamoDB::Client.new
+        #byebug
+        reader = DynamoReader.new(dynamodb, table_name)
+        #byebug
+        writer = DynamoWriter.new(dynamodb, table_name)
+        [reader, writer]
       end
     end
 

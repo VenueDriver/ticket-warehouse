@@ -25,5 +25,11 @@ module Manifest
       Simulator.new
     end
 
+    def self.simulate_1
+      s = Simulator.new
+
+      s.scratch
+    end
+
   end
 end
