@@ -91,7 +91,9 @@ module Manifest
       def update_using(event_id,&block)
         event_id_wrapper = EventIdWrapper.new(event_id, table_name: self.table_name)
   
-        update_params = yield(event_id_wrapper)
+        update_params = block.call(event_id_wrapper) 
+
+       # puts "update_params: #{update_params}"
   
         execute_update(update_params)
       end
