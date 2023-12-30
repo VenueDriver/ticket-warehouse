@@ -383,10 +383,10 @@ export class TicketWarehouseStack extends cdk.Stack {
       memorySize: 1024,
     });
 
-    const ruleForDailyTicketSaleReport = new events.Rule(this, `RuleForUpcoming-${stage}`, {
+    const ruleForDailyTicketSaleReport = new events.Rule(this, `RuleForDailyTicketSaleReport-${stage}`, {
       schedule: events.Schedule.rate(cdk.Duration.minutes(5))
     });
-    ruleForDailyTicketSaleReport.addTarget(new targets.LambdaFunction(ticketLambda));
+    ruleForDailyTicketSaleReport.addTarget(new targets.LambdaFunction(dailyTicketSaleReportFunction));
 
     /////////////
     // Outputs
