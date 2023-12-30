@@ -14,7 +14,10 @@ module Manifest
       def scratch
         report_selector = ReportSelector.new('production')
 
-        reference_time_in_pst = DateTime.new(2024,1,2)
+        reference_time_in_pst = DateTime.new(2024,1,2,1)
+
+        puts "reference_time_in_pst: #{reference_time_in_pst}"
+
         tz = TZInfo::Timezone.get('America/Los_Angeles')
 
         reference_time_in_utc = tz.local_to_utc(reference_time_in_pst)
