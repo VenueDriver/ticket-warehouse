@@ -383,6 +383,18 @@ export class TicketWarehouseStack extends cdk.Stack {
       memorySize: 1024,
     });
 
+    dailyTicketSaleReportFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: [
+        'athena:GetNamedQuery',
+        'athena:ListNamedQueries',
+        'athena:StartQueryExecution',
+        'athena:GetQueryExecution',
+        'athena:GetQueryResults',
+        'ssm:GetParameter'
+      ],
+      resources: ['*'],
+    }));
+
     const ruleForDailyTicketSaleReport = new events.Rule(this, `RuleForDailyTicketSaleReport-${stage}`, {
       schedule: events.Schedule.rate(cdk.Duration.minutes(5))
     });
