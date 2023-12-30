@@ -11,7 +11,7 @@ module Manifest
 
 
       def scratch
-        mock_prelim_sent
+        mock_final_sent
       end
 
       def mock_cancel_report
@@ -44,9 +44,7 @@ module Manifest
           @dynamo_writer.mark_final_sent(event_id)
         end
 
-        recheck = @dynamo_reader.fetch_control_rows(event_ids)
-
-        puts "after_final: #{recheck}"
+        recheck_rows(event_ids, 'after_final')
       end
 
       def mock_prelim_sent
@@ -54,16 +52,13 @@ module Manifest
 
         r = @dynamo_writer.init_pending_reports(event_ids)
 
-        recheck = @dynamo_reader.fetch_control_rows(event_ids)
-        puts "recheck1: #{recheck}"
+        recheck_rows(event_ids, '1')
 
         event_ids.each do |event_id|
           @dynamo_writer.mark_preliminary_sent(event_id)
         end
 
-        recheck = @dynamo_reader.fetch_control_rows(event_ids)
-
-        puts "recheck2: #{recheck}"
+        recheck_rows(event_ids, '2')
       end
 
       ##########################################
@@ -74,10 +69,6 @@ module Manifest
         rows.each do |row|
           @dynamo_writer.delete_control_row(row)
         end
-
-        recheck = @dynamo_reader.fetch_control_rows(rows)
-
-       # puts "recheck: #{recheck}"
       end
 
       def try_partition_event_ids_by_existence
