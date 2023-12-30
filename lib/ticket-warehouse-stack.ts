@@ -391,7 +391,15 @@ export class TicketWarehouseStack extends cdk.Stack {
         'athena:StartQueryExecution',
         'athena:GetQueryExecution',
         'athena:GetQueryResults',
-        'ssm:GetParameter'
+        'ssm:GetParameter',
+        's3:GetBucketLocation',
+        's3:GetObject',
+        's3:ListBucket',
+        's3:ListBucketMultipartUploads',
+        's3:ListMultipartUploadParts',
+        's3:AbortMultipartUpload',
+        's3:CreateBucket',
+        's3:PutObject'
       ],
       resources: ['*'],
     }));
