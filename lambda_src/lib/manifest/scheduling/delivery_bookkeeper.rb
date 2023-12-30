@@ -15,6 +15,14 @@ module Manifest
         :final_failed,
         keyword_init: true
       ) 
+
+      # EmailAttempt = Struct.new(
+      #   :email_was_sent, 
+      #   :ses_raw_email_result,
+      #   :error_message, 
+      #   :error_class, 
+      #   keyword_init:true ) 
+      # use #succeeded? and failed? to determine success or failure
       
       def record_email_attempt_results(email_attempt_results)
         categorized_results = categorize_email_attempt_results(email_attempt_results)
