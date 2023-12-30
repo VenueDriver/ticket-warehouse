@@ -13,34 +13,33 @@ module Manifest
   
       class << self
         def batch_CONTROL_INITIALIZED(event_ids, table_name:)
-          
-          item_data = event_ids.map do |event_id|
-            {
-              event_key: event_id,
-              report_status: CONTROL_INITIALIZED
-            }
-          end
-  
-          put_requests = item_data.map do |single_item_data|
-            {put_request: { item:single_item_data}   }  
+          put_requests = event_ids.map do |event_id|
+            create_put_request(event_id)
           end
   
           request_items = {
             table_name => put_requests
+          } 
+        end
+
+        def create_put_request(event_id)
+          item_data = {
+            event_key: event_id,
+            report_status: CONTROL_INITIALIZED
           }
           
+          {
+            put_request: { item:item_data}   
+          }  
         end
   
       end
     end
   
-    class DynamoWriter < DynamoHelperBase
-      # pending: deleting rows
-      
+    class DynamoWriter < DynamoHelperBase      
       #uses BatchWriteItem
       def init_pending_reports(event_ids)
         request_items = InitialRow.batch_CONTROL_INITIALIZED(event_ids, table_name: self.table_name)
-        pp request_items
 
         # Perform the BatchWriteItem operation
         dynamodb.batch_write_item(request_items: request_items)
@@ -71,6 +70,8 @@ module Manifest
         end
       end
 
+      REMOVE_CONTROL_ROW_RETURN_VALUES = 'ALL_OLD'
+
       def delete_control_row(single_event_id)
         begin
           response = @dynamodb.delete_item({
@@ -78,7 +79,9 @@ module Manifest
             key: {
               event_key: single_event_id
             },
+            return_values: REMOVE_CONTROL_ROW_RETURN_VALUES
           })
+          # [NONE, ALL_OLD, UPDATED_OLD, ALL_NEW, UPDATED_NEW]
           puts "Delete successful. Deleted event_key #{single_event_id}, attributes: #{response.attributes}"
           response
         rescue Aws::DynamoDB::Errors::ServiceError => e
@@ -92,8 +95,6 @@ module Manifest
         event_id_wrapper = EventIdWrapper.new(event_id, table_name: self.table_name)
   
         update_params = block.call(event_id_wrapper) 
-
-       # puts "update_params: #{update_params}"
   
         execute_update(update_params)
       end

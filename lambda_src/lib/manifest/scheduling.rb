@@ -9,6 +9,8 @@ require_relative 'scheduling/candidate_event_reader.rb'
 require_relative 'scheduling/report_performer.rb'
 require_relative 'scheduling/delivery_bookkeeper.rb'
 require_relative 'scheduling/simulator.rb'
+require_relative 'scheduling/examples.rb'
+require_relative 'scheduling/jan_2024_week_one.rb'
 
 module Manifest
   class Scheduling 
@@ -21,12 +23,8 @@ module Manifest
       Scheduling::CandidateEventReader.test_me
     end
 
-    def self.create_simulator
-      Simulator.new
-    end
-
     def self.simulate_1
-      s = Simulator.new
+      s = Examples.new
 
       s.scratch
     end

@@ -8,13 +8,8 @@ module Manifest
     class ReportSelector 
       def initialize(env_in = ENV['ENV'])
         @athena_reader = CandidateEventReader.new(env_in)
-
-        @dynamo_db_client = Aws::DynamoDB::Client.new
         table_name = DEFAULT_DDB_TABLE_NAME
-        @dynamo_reader = DynamoReader.new(@dynamo_db_client, table_name)
-        
-        # writer not used currently 
-        @dynamo_writer = DynamoWriter.new(@dynamo_db_client, table_name)
+        @dynamo_reader, @dynamo_writer = DynamoHelper.create_reader_and_writer(table_name)
       end
   
       # - Input: reference_time, defaults to now

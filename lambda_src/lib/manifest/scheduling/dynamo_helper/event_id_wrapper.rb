@@ -48,8 +48,10 @@ module Manifest
       def convert_timestamp_to_string_for_dynamodb(timestamp)
         timestamp.strftime(DDB_TIMESTAMP_FORMAT)
       end
+
+      DEFAULT_RETURN_VALUES = 'ALL_NEW'
   
-      def create_update_params( update_expression, expression_attribute_values, return_values: 'UPDATED_NEW')
+      def create_update_params( update_expression, expression_attribute_values, return_values: DEFAULT_RETURN_VALUES)
         update_item_params = {
           table_name:self.table_name,
           key: {
@@ -57,7 +59,8 @@ module Manifest
           },
           update_expression: update_expression,
           expression_attribute_values: expression_attribute_values,
-          return_values: return_values # You can change this value based on your needs
+          # [NONE, ALL_OLD, UPDATED_OLD, ALL_NEW, UPDATED_NEW]
+          return_values: return_values # 
         }
       end
     end
