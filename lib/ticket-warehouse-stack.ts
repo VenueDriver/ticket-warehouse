@@ -363,6 +363,26 @@ export class TicketWarehouseStack extends cdk.Stack {
       memorySize: 1024,
     });
 
+    const dailyTicketSAleReportFunction = new Function(this, `DailyTicketSaleReportFunction-${stage}`, {
+      runtime: Runtime.RUBY_3_2,
+      code: Code.fromAsset('lambda_src', {
+        bundling: {
+          image: Runtime.RUBY_3_2.bundlingImage,
+          command: [
+            'bash', '-c', [
+              'bundle install --path /asset-output/vendor/bundle',
+              'cp -au . /asset-output/'
+            ].join(' && ')
+          ],
+        }
+      }),
+      handler: 'daily-ticket-sale-report-handler.lambda_handler',
+      environment: {
+      },
+      timeout: cdk.Duration.minutes(5),
+      memorySize: 1024,
+    });
+
     /////////////
     // Outputs
     

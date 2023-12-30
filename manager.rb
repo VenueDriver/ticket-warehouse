@@ -31,6 +31,11 @@ module Manager
       Manager::Core.reset(time_range:options[:time_range], threads:options[:threads])
     end
 
+    desc "daily", "Generate Daily Ticket Sale Report"
+    def daily
+      Manager::Core.daily
+    end
+
     desc "quickight", "Manage Quicksight resources."
     subcommand "quicksight", Quicksight
 

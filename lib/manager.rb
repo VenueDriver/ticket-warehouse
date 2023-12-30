@@ -3,6 +3,7 @@ require_relative 'manager/Athena'
 require_relative 'manager/Glue'
 require_relative 'manager/S3'
 require_relative 'manager/Quicksight'
+require_relative '../lambda_src/lib/report'
 
 require 'dotenv'
 Dotenv.load('.env')
@@ -44,6 +45,11 @@ module Manager
 
       puts "  Starting Glue crawlers..."
       Manager::Glue.start_crawlers
+    end
+
+    # Generate Daily Ticket Sales Report
+    def self.daily
+      Report::Daily.new.generate
     end
 
   end
