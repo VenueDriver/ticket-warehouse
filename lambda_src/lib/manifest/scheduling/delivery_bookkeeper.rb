@@ -36,6 +36,8 @@ module Manifest
 
       def process_preliminary_succeeded(event_id_list)
         event_ids_missing_from_dynamo = find_rows_that_need_initialization(event_id_list)
+        
+        #####
         self.dynamo_writer.initialize_control_rows(event_ids_missing_from_dynamo)
 
         event_id_list.each do |event_id|
@@ -67,7 +69,7 @@ module Manifest
       private
 
       def find_rows_that_need_initialization(event_id_list)
-        event_ids_that_exist, event_ids_that_dont_exist = dynamo_reader.partition_event_ids_by_existence(event_id_list)
+        event_ids_that_exist, event_ids_that_dont_exist = dynamo_reader.partition_event_by_exists_and_not_exists(event_id_list)
         event_ids_that_dont_exist
       end
 
