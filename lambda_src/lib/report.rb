@@ -1,12 +1,14 @@
 require 'aws-sdk-ses'
 require 'aws-sdk-athena'
 require 'json'
+require_relative '../athena-manager'
 
 module Report
   class Daily
     def initialize
       @ses_client = Aws::SES::Client.new(region:'us-east-1')
       @athena_client = Aws::Athena::Client.new(region: 'us-east-1')
+      @athena_manager = AthenaManager.new()
     end
 
     def generate
@@ -36,50 +38,14 @@ module Report
         WHERE
           LOWER(ticket.ticket_type_name) LIKE '%party pass%'
           AND CAST(event.start AS TIMESTAMP) <= CURRENT_TIMESTAMP + INTERVAL '60' DAY
+          AND event.organization_name IN
+          ( 'Liquid Pool Lounge', 'OMNIA', 'LAVO Las Vegas', 'Wet Republic', 'Hakkasan Nightclub', 'JEWEL Nightclub', 'OMNIA San Diego', 'TAO Beach Dayclub', 'Marquee Nightclub', 'Marquee Dayclub', 'TAO Nightclub')
         GROUP BY
           DATE_FORMAT(DATE_TRUNC('week', CAST(event.start AS TIMESTAMP)), '%Y-%m-%d'),
           ticket.ticket_type_name
         ORDER BY
           week_start ASC
       SQL
-  
-      start_query_execution_response = @athena_client.start_query_execution({
-        query_string: query,
-        result_configuration: {
-          output_location: "s3://#{ENV['BUCKET_NAME']}/athena-query-results/",
-        },
-      })
-    
-      query_execution_id = start_query_execution_response.query_execution_id
-    
-      # Wait until the query execution status is 'SUCCEEDED', 'FAILED', or 'CANCELLED'
-      loop do
-        get_query_execution_response = @athena_client.get_query_execution({
-          query_execution_id: query_execution_id,
-        })
-      
-        status = get_query_execution_response.query_execution.status.state
-      
-        if status == 'FAILED'
-          puts "Query failed with error message: #{get_query_execution_response.query_execution.status.state_change_reason}"
-          return { statusCode: 500, body: JSON.generate('Error executing Athena query') }
-        end
-      
-        break if status == 'SUCCEEDED' || status == 'CANCELLED'
-      
-        sleep 5 # wait for 5 seconds before the next status check
-      end
-    
-      # Get the query results
-      begin
-        # Get the query results
-        get_query_results_response = @athena_client.get_query_results({
-          query_execution_id: query_execution_id,
-        })
-      rescue Aws::Athena::Errors::InvalidRequestException => e
-        puts "Error executing Athena query: #{e.message}"
-        return { statusCode: 500, body: JSON.generate('Error executing Athena query') }
-      end
     
       puts "Daily Ticket Sales Report"
       puts "Generated on #{Time.now.strftime('%Y-%m-%d %H:%M:%S')}"
@@ -87,13 +53,15 @@ module Report
       puts "\n"
       puts "Las Vegas Party Pass Summary by Week"
       puts "\n"
-    
+
+      query_results = @athena_manager.start_query(query_string:query)
+
       # Process the query results
-      get_query_results_response.result_set.rows.slice(1..-1).each do |row|
-        puts row.data[1].var_char_value
-        puts "    Price:         #{row.data[2].var_char_value}"
-        puts "    Total Sales:   #{row.data[3].var_char_value}"
-        puts "    Last 24 Hours: #{row.data[4].var_char_value}"
+      query_results.each do |row|
+        puts row['ticket_type_name']
+        puts "    Price:         #{row['price']}"
+        puts "    Total Sales:   #{row['tickets_sold']}"
+        puts "    Last 24 Hours: #{row['sales_last_24_hours']}"
         puts "\n"
       end
 
@@ -124,6 +92,8 @@ module Report
         WHERE
           LOWER(t.tickettype.name) NOT LIKE '%party pass%'
           AND CAST(e."event".start AS TIMESTAMP) BETWEEN CURRENT_TIMESTAMP AND CURRENT_TIMESTAMP + INTERVAL '60' DAY
+          AND event.organization_name IN
+          ( 'Liquid Pool Lounge', 'OMNIA', 'LAVO Las Vegas', 'Wet Republic', 'Hakkasan Nightclub', 'JEWEL Nightclub', 'OMNIA San Diego', 'TAO Beach Dayclub', 'Marquee Nightclub', 'Marquee Dayclub', 'TAO Nightclub')
         GROUP BY
           e."event".name,
           e."event".organization_name,
@@ -136,43 +106,7 @@ module Report
           ticket_type_name ASC
       SQL
       
-      start_query_execution_response = @athena_client.start_query_execution({
-        query_string: query,
-        result_configuration: {
-          output_location: "s3://#{ENV['BUCKET_NAME']}/athena-query-results/",
-        },
-      })
-      
-      query_execution_id = start_query_execution_response.query_execution_id
-      
-      # Wait until the query execution status is 'SUCCEEDED', 'FAILED', or 'CANCELLED'
-      loop do
-        get_query_execution_response = @athena_client.get_query_execution({
-          query_execution_id: query_execution_id,
-        })
-      
-        status = get_query_execution_response.query_execution.status.state
-      
-        if status == 'FAILED'
-          puts "Query failed with error message: #{get_query_execution_response.query_execution.status.state_change_reason}"
-          return { statusCode: 500, body: JSON.generate('Error executing Athena query') }
-        end
-      
-        break if status == 'SUCCEEDED' || status == 'CANCELLED'
-      
-        sleep 5 # wait for 5 seconds before the next status check
-      end
-      
-      # Get the query results
-      begin
-        # Get the query results
-        get_query_results_response = @athena_client.get_query_results({
-          query_execution_id: query_execution_id,
-        })
-      rescue Aws::Athena::Errors::InvalidRequestException => e
-        puts "Error executing Athena query: #{e.message}"
-        return { statusCode: 500, body: JSON.generate('Error executing Athena query') }
-      end
+      query_results = @athena_manager.start_query(query_string:query)
       
       puts "Daily Ticket Sales Report"
       puts "Generated on #{Time.now.strftime('%Y-%m-%d %H:%M:%S')}"
@@ -198,16 +132,16 @@ module Report
       data = Hash.new { |hash, key| hash[key] = Hash.new { |hash, key| hash[key] = Hash.new { |hash, key| hash[key] = { "Event Date" => nil, "Tickets" => [] } } } }
 
       # Step 3: Iterate over the Athena results
-      get_query_results_response.result_set.rows.slice(1..-1).each do |row|
-        event_date = Date.parse(row.data[2].var_char_value) # Parse the event date
-        week_start = event_date - event_date.wday # Calculate the start of the week
-        venue_name = row.data[1].var_char_value
-        event_title = row.data[0].var_char_value
+      query_results.each do |row|
+        event_date = Date.parse(row['event_date'])
+        week_start = event_date - event_date.wday
+        venue_name = row['venue_name']
+        event_title = row['event_name']
         ticket_info = {
-          "Ticket Type" => row.data[3].var_char_value,
-          "Price" => row.data[4].var_char_value,
-          "Total Sales" => row.data[5].var_char_value,
-          "Last 24 Hours" => row.data[6].var_char_value
+          "Ticket Type" => row['ticket_type_name'],
+          "Price" => row['price'],
+          "Total Sales" => row['quantity_sold'],
+          "Last 24 Hours" => row['sales_last_24_hours']
         }
 
         # Add the event date and ticket info to the hash
