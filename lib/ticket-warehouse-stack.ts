@@ -378,7 +378,8 @@ export class TicketWarehouseStack extends cdk.Stack {
       }),
       handler: 'daily-ticket-sale-report-handler.lambda_handler',
       environment: {
-      },
+        'ENV': stage,
+      }
       timeout: cdk.Duration.minutes(5),
       memorySize: 1024,
     });
