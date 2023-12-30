@@ -18,11 +18,11 @@ module Manifest
         :final_already_sent, 
         :report_canceled,
         :no_action_waiting_to_send_final, 
-        :other,
+        :preliminary_is_not_yet_due, # Renamed key
 
         keyword_init: true
-        ) do
-
+      ) do
+        
         def convert_to_only_ids
           self.class.new(
             send_preliminary: self.send_preliminary.map(&:event_id),
@@ -30,7 +30,7 @@ module Manifest
             final_already_sent: self.final_already_sent.map(&:event_id),
             report_canceled: self.report_canceled.map(&:event_id),
             no_action_waiting_to_send_final: self.no_action_waiting_to_send_final.map(&:event_id),
-            other: self.other.map(&:event_id)
+            preliminary_is_not_yet_due: self.preliminary_is_not_yet_due.map(&:event_id) # Renamed key
           )
         end
         
@@ -41,7 +41,7 @@ module Manifest
             final_already_sent: [],
             report_canceled: [],
             no_action_waiting_to_send_final: [],
-            other: []
+            preliminary_is_not_yet_due: [] # Renamed key
           )
         end
       end
@@ -65,7 +65,7 @@ module Manifest
             if join_row.within_cutoff?(preliminary_cutoff_utc)
               event_categories.send_preliminary << join_row
             else 
-              event_categories.other << join_row
+              event_categories.preliminary_is_not_yet_due << join_row
             end
           end
 
