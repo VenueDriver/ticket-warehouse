@@ -21,7 +21,7 @@ module Manifest
         end
 
         def report_canceled?
-          ccontrol_row_present? && control_with_status?(REPORT_CANCELED)
+          control_row_present? && control_with_status?(REPORT_CANCELED)
         end
 
         def final_already_sent?
