@@ -3,9 +3,7 @@ module Manifest
     class DeliveryBookkeeper
       attr_reader :dynamo_writer, :dynamo_reader
       def initialize( control_table_name )
-        dynamo_db_client = Aws::DynamoDB::Client.new
-        @dynamo_writer = Manifest::DynamoWriter.new( dynamo_db_client, control_table_name)      
-        @dyanmo_reader = Manifest::DynamoReader.new( dynamo_db_client, control_table_name)
+        @dynamo_reader, @dynamo_writer = DynamoHelper.create_reader_and_writer(control_table_name)
       end
 
       CategorizedAttempts = Struct.new(
