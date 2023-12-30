@@ -1,3 +1,5 @@
+require_relative '../../../venues'
+
 module Manifest
   class Scheduling
     module EventsQuery 
@@ -15,8 +17,7 @@ module Manifest
     , CAST(CAST(tw_events.event.start AS TIMESTAMP) AS DATE) AS event_date
     , CAST(tw_events.event.start_utc AS TIMESTAMP) as event_start_utc_timestamp
     from ticket_warehouse_events tw_events
-    where tw_events.event.location in 
-    ( 'Liquid Pool Lounge', 'OMNIA', 'LAVO Las Vegas', 'Wet Republic', 'Hakkasan Nightclub', 'JEWEL Nightclub', 'OMNIA San Diego', 'TAO Beach Dayclub', 'Marquee Nightclub', 'Marquee Dayclub', 'TAO Nightclub')
+    where tw_events.event.location in ('#{Venues::LIST.join("', '")}')
   )
   select casted_event_data.venue
   , casted_event_data.event_title
