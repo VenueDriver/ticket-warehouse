@@ -38,6 +38,14 @@ module Manifest
   
     class DynamoWriter < DynamoHelperBase      
       def initialize_control_rows(event_ids)
+        results = []
+        event_ids.each_slice(25) do |batch|
+          results << self.initialize_control_rows_limit_25(batch)
+        end
+        results
+      end
+
+      def initialize_control_rows_limit_25(event_ids)
         request_items = self.create_batch_insert_request_items(event_ids)
 
         # Perform the BatchWriteItem operation
