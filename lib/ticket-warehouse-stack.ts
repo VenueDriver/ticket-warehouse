@@ -363,7 +363,7 @@ export class TicketWarehouseStack extends cdk.Stack {
       memorySize: 1024,
     });
 
-    const dailyTicketSAleReportFunction = new Function(this, `DailyTicketSaleReportFunction-${stage}`, {
+    const dailyTicketSaleReportFunction = new Function(this, `DailyTicketSaleReportFunction-${stage}`, {
       runtime: Runtime.RUBY_3_2,
       code: Code.fromAsset('lambda_src', {
         bundling: {
@@ -382,6 +382,11 @@ export class TicketWarehouseStack extends cdk.Stack {
       timeout: cdk.Duration.minutes(5),
       memorySize: 1024,
     });
+
+    const ruleForDailyTicketSaleReport = new events.Rule(this, `RuleForUpcoming-${stage}`, {
+      schedule: events.Schedule.rate(cdk.Duration.minutes(5))
+    });
+    ruleForDailyTicketSaleReport.addTarget(new targets.LambdaFunction(ticketLambda));
 
     /////////////
     // Outputs

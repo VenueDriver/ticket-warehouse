@@ -49,7 +49,8 @@ module Manager
 
     # Generate Daily Ticket Sales Report
     def self.daily
-      Report::Daily.new.generate
+      daily_report = Report::Daily.new
+      daily_report.send_email(daily_report.generate)
     end
 
   end

@@ -2,9 +2,14 @@ require 'aws-sdk-ses'
 require 'aws-sdk-athena'
 require 'json'
 require_relative '../athena-manager'
+require_relative '../venues'
 
 module Report
+
   class Daily
+    SENDER =    'Ticketing<reports@ticketdriver.com>'
+    RECIPIENT = 'LVTickets@taogroup.com'
+
     def initialize
       @ses_client = Aws::SES::Client.new(region:'us-east-1')
       @athena_client = Aws::Athena::Client.new(region: 'us-east-1')
@@ -14,8 +19,35 @@ module Report
     def generate
       puts "Generating Daily Ticket Sales Report..."
 
-      generate_party_pass_summary
-      generate_regular_ticket_report
+      report =
+        generate_party_pass_summary +
+        generate_regular_ticket_report
+    end
+
+    def send_email(report)
+      begin
+        @ses_client.send_email({
+          destination: {
+            to_addresses: ['ryan.porter@taogroup.com'],
+          },
+          message: {
+            body: {
+              text: {
+                charset: 'UTF-8',
+                data: report,
+              },
+            },
+            subject: {
+              charset: 'UTF-8',
+              data: 'Daily Ticket Sales Report',
+            },
+          },
+          source: SENDER
+        })
+        puts 'Email sent successfully'
+      rescue Aws::SES::Errors::ServiceError => error
+        puts "Email not sent. Error message: #{error}"
+      end
     end
 
     def generate_party_pass_summary
@@ -38,8 +70,7 @@ module Report
         WHERE
           LOWER(ticket.ticket_type_name) LIKE '%party pass%'
           AND CAST(event.start AS TIMESTAMP) <= CURRENT_TIMESTAMP + INTERVAL '60' DAY
-          AND event.organization_name IN
-          ( 'Liquid Pool Lounge', 'OMNIA', 'LAVO Las Vegas', 'Wet Republic', 'Hakkasan Nightclub', 'JEWEL Nightclub', 'OMNIA San Diego', 'TAO Beach Dayclub', 'Marquee Nightclub', 'Marquee Dayclub', 'TAO Nightclub')
+          AND event.organization_name IN ('#{Venues::LIST.join("', '")}')
         GROUP BY
           DATE_FORMAT(DATE_TRUNC('week', CAST(event.start AS TIMESTAMP)), '%Y-%m-%d'),
           ticket.ticket_type_name
@@ -47,30 +78,34 @@ module Report
           week_start ASC
       SQL
     
-      puts "Daily Ticket Sales Report"
-      puts "Generated on #{Time.now.strftime('%Y-%m-%d %H:%M:%S')}"
+      report = ''
+
+      report << "Daily Ticket Sales Report\n"
+      report <<  "Generated on #{Time.now.strftime('%Y-%m-%d %H:%M:%S')}\n"
     
-      puts "\n"
-      puts "Las Vegas Party Pass Summary by Week"
-      puts "\n"
+      report <<  "\n"
+      report <<  "Las Vegas Party Pass Summary by Week\n"
+      report <<  "\n"
 
       query_results = @athena_manager.start_query(query_string:query)
 
       # Process the query results
       query_results.each do |row|
-        puts row['ticket_type_name']
-        puts "    Price:         #{row['price']}"
-        puts "    Total Sales:   #{row['tickets_sold']}"
-        puts "    Last 24 Hours: #{row['sales_last_24_hours']}"
-        puts "\n"
+        report <<  row['ticket_type_name'] + "\n"
+        report <<  "    Price:         #{row['price']}\n"
+        report <<  "    Total Sales:   #{row['tickets_sold']}\n"
+        report <<  "    Last 24 Hours: #{row['sales_last_24_hours']}\n"
+        report <<  "\n"
       end
 
+      report
     end
 
     def generate_regular_ticket_report
-      puts "\n"
-      puts "Regular Ticket Sales Report"
-      puts "\n"
+      report = ''
+      report <<  "\n"
+      report <<  "Regular Ticket Sales Report\n"
+      report <<  "\n"
 
       query = <<-SQL
         SELECT
@@ -92,8 +127,7 @@ module Report
         WHERE
           LOWER(t.tickettype.name) NOT LIKE '%party pass%'
           AND CAST(e."event".start AS TIMESTAMP) BETWEEN CURRENT_TIMESTAMP AND CURRENT_TIMESTAMP + INTERVAL '60' DAY
-          AND event.organization_name IN
-          ( 'Liquid Pool Lounge', 'OMNIA', 'LAVO Las Vegas', 'Wet Republic', 'Hakkasan Nightclub', 'JEWEL Nightclub', 'OMNIA San Diego', 'TAO Beach Dayclub', 'Marquee Nightclub', 'Marquee Dayclub', 'TAO Nightclub')
+          AND event.organization_name IN ('#{Venues::LIST.join("', '")}')
         GROUP BY
           e."event".name,
           e."event".organization_name,
@@ -108,12 +142,12 @@ module Report
       
       query_results = @athena_manager.start_query(query_string:query)
       
-      puts "Daily Ticket Sales Report"
-      puts "Generated on #{Time.now.strftime('%Y-%m-%d %H:%M:%S')}"
+      report <<  "Daily Ticket Sales Report\n"
+      report <<  "Generated on #{Time.now.strftime('%Y-%m-%d %H:%M:%S')}\n"
       
-      puts "\n"
-      puts "Las Vegas Party Pass Summary by Week"
-      puts "\n"
+      report <<  "\n"
+      report <<  "Las Vegas Party Pass Summary by Week\n"
+      report <<  "\n"
       
       # Process the query results
       
@@ -151,26 +185,27 @@ module Report
 
       # Step 5: Iterate over the hash to print the output
       data.each do |week_start, venues|
-        puts "Week of #{week_start} through #{week_start + 6}"
+        report <<  "Week of #{week_start} through #{week_start + 6}"
         venues.each do |venue_name, events|
-          puts "\n"
-          puts "  Venue: #{venue_name}"
+          report <<  "\n"
+          report <<  "  Venue: #{venue_name}\n"
           events.each do |event_title, event_info|
-            puts "\n"
-            puts "    Event Title: #{event_title}"
-            puts "    Event Date:  #{event_info["Event Date"]}"
+            report <<  "\n"
+            report <<  "    Event Date:  #{event_info["Event Date"]}\n"
+            report <<  "    Event Title: #{event_title}\n"
             event_info["Tickets"].each do |ticket|
-              puts "\n"
-              puts "      Ticket Type:       #{ticket["Ticket Type"]}"
-              puts "        Price:           #{ticket["Price"]}"
-              puts "          Total Sales:   #{ticket["Total Sales"]}"
-              puts "          Last 24 Hours: #{ticket["Last 24 Hours"]}"
+              report <<  "\n"
+              report <<  "      Ticket Type:       #{ticket["Ticket Type"]}\n"
+              report <<  "        Price:           #{ticket["Price"]}\n"
+              report <<  "          Total Sales:   #{ticket["Total Sales"]}\n"
+              report <<  "          Last 24 Hours: #{ticket["Last 24 Hours"]}\n"
             end
           end
         end
-        puts "\n"
+        report <<  "\n"
       end
 
+      report
     end
 
   end
