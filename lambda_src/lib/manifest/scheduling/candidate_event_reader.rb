@@ -26,7 +26,7 @@ module Manifest
         date_start = Date.new(2024,1,1)
         date_end = Date.new(2024,1,3)
 
-        r = reader.fetch_candidate_event_rows(date_start, date_end)
+        #r = reader.fetch_candidate_event_rows(date_start, date_end)
       end
     end
   end
