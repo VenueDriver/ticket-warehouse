@@ -11,8 +11,42 @@ module Manifest
 
 
       def scratch
+        mock_cancel_report
+      end
+
+      def mock_cancel_report
         cleanup_control_rows
         mock_prelim_sent
+
+        event_ids = FAKE_EVENT_IDS_1
+
+        recheck_rows(event_ids, '3')
+
+        cancel_event_id = event_ids.first
+
+        @dynamo_writer.cancel_report(cancel_event_id)
+
+        recheck_rows(event_ids, '4')
+        #r
+      end
+
+      def mock_final_sent
+        #precondition: we do the steps in 'mock_prelim_sent'
+        cleanup_control_rows
+        mock_prelim_sent
+
+        puts "sleeping for 5"
+        sleep(5)
+
+        event_ids = FAKE_EVENT_IDS_1
+
+        event_ids.each do |event_id|
+          @dynamo_writer.mark_final_sent(event_id)
+        end
+
+        recheck = @dynamo_reader.fetch_control_rows(event_ids)
+
+        puts "after_final: #{recheck}"
       end
 
       def mock_prelim_sent
@@ -56,6 +90,13 @@ module Manifest
         fake_event_ids = FAKE_EVENT_IDS_1
 
         @dynamo_reader.fetch_control_rows(fake_event_ids)
+      end
+
+      private
+
+      def recheck_rows(event_ids, label='1')
+        recheck = @dynamo_reader.fetch_control_rows(event_ids)
+        puts "recheck_#{label}: #{recheck}"
       end
     end
   end
