@@ -37,14 +37,6 @@ module Manifest
     end
   
     class DynamoWriter < DynamoHelperBase      
-      #uses BatchWriteItem
-      # def init_pending_reports(event_ids)
-      #   request_items = InitialRow.batch_CONTROL_INITIALIZED(event_ids, table_name: self.table_name)
-
-      #   # Perform the BatchWriteItem operation
-      #   dynamodb.batch_write_item(request_items: request_items)
-      # end
-
       def initialize_control_rows(event_ids)
         request_items = self.create_batch_insert_request_items(event_ids)
 
