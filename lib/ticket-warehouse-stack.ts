@@ -363,6 +363,34 @@ export class TicketWarehouseStack extends cdk.Stack {
       memorySize: 1024,
     });
 
+    manifestDeliveryControlFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: [
+        'athena:GetNamedQuery',
+        'athena:ListNamedQueries',
+        'athena:StartQueryExecution',
+        'athena:GetQueryExecution',
+        'athena:GetQueryResults',
+        'ssm:GetParameter',
+        's3:GetBucketLocation',
+        's3:GetObject',
+        's3:ListBucket',
+        's3:ListBucketMultipartUploads',
+        's3:ListMultipartUploadParts',
+        's3:AbortMultipartUpload',
+        's3:CreateBucket',
+        's3:PutObject',
+        'glue:GetDatabase',
+        'glue:CreateDatabase',
+        'glue:CreateTable',
+        'glue:GetTable',
+        'glue:GetPartitions',
+        'glue:BatchCreatePartition',
+        'glue:startCrawler',
+        'ses:SendEmail'
+      ],
+      resources: ['*'],
+    }));
+
     const dailyTicketSaleReportFunction = new Function(this, `DailyTicketSaleReportFunction-${stage}`, {
       runtime: Runtime.RUBY_3_2,
       code: Code.fromAsset('lambda_src', {
