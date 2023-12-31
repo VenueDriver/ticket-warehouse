@@ -5,6 +5,21 @@ module Manifest
   class Main 
     class << self
 
+      def perform_report(event_id, report_variant_in, ses_client)
+        case report_variant_in
+        when 'preliminary'
+          email_report = EmailReport.make_preliminary(event_id)
+        when 'final'
+          email_report = EmailReport.make_final(event_id)
+        when 'accounting'
+          email_report = EmailReport.make_accounting(event_id)
+        else
+          raise "Invalid report variant: #{report_variant_in}"
+        end
+      
+        email_report.send_ses_raw_email!(ses_client, to_addresses: EmailReport::MARTECH_TO)
+      end
+
       def preliminary_report(event_id, ses_client)
         email_report = EmailReport.make_preliminary(event_id)
         
