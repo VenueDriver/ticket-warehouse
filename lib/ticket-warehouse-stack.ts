@@ -406,7 +406,8 @@ export class TicketWarehouseStack extends cdk.Stack {
         'glue:GetTable',
         'glue:GetPartitions',
         'glue:BatchCreatePartition',
-        'glue:startCrawler'
+        'glue:startCrawler',
+        'ses:SendEmail'
       ],
       resources: ['*'],
     }));
