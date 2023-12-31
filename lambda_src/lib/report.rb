@@ -28,7 +28,10 @@ module Report
       begin
         @ses_client.send_email({
           destination: {
-            to_addresses: ['ryan.porter@taogroup.com'],
+            to_addresses: [
+              'Stephane.Tousignant@taogroup.com',
+              'marketing.technology.developers@taogroup.com'
+            ],
           },
           message: {
             body: {
