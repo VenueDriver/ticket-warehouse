@@ -37,9 +37,16 @@ module Manifest
     end
   
     class DynamoWriter < DynamoHelperBase      
-      #uses BatchWriteItem
-      def init_pending_reports(event_ids)
-        request_items = InitialRow.batch_CONTROL_INITIALIZED(event_ids, table_name: self.table_name)
+      def initialize_control_rows(event_ids)
+        results = []
+        event_ids.each_slice(25) do |batch|
+          results << self.initialize_control_rows_limit_25(batch)
+        end
+        results
+      end
+
+      def initialize_control_rows_limit_25(event_ids)
+        request_items = self.create_batch_insert_request_items(event_ids)
 
         # Perform the BatchWriteItem operation
         dynamodb.batch_write_item(request_items: request_items)
@@ -112,15 +119,26 @@ module Manifest
   
     class DynamoReader < DynamoHelperBase
       def fetch_control_rows(event_ids)
+        results = []
+        event_ids.each_slice(25) do |batch|
+          results << self.fetch_control_rows_limit_25(batch)
+        end
+        results.flatten
+      end
+
+      # BatchGetItem has a limit of 100 items
+      # We are using 25 because  requesting too many at once 
+      # increases the risk of unprocesssed keys because of the response time
+      def fetch_control_rows_limit_25(event_ids)
         keys_to_get = event_ids.map { |event_id| { event_key: event_id } }
   
-          # Create a BatchGetItem request
+        # Create a BatchGetItem request
         request_items = create_request_items(event_ids)
-  
+
         # Perform the BatchGetItem operation
         response = @dynamodb.batch_get_item(request_items: request_items)
         
-              # Process the response and return the results
+        # Process the response and return the results
         if response.responses[table_name]
           return response.responses[table_name]
         else

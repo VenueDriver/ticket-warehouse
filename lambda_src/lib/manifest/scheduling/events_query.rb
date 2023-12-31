@@ -15,6 +15,7 @@ module Manifest
     , tw_events.event.name as event_title
     , tw_events.event.id as event_id
     , CAST(CAST(tw_events.event.start AS TIMESTAMP) AS DATE) AS event_date
+    , CAST(tw_events.event."start" AS TIMESTAMP) as local_event_start_timestamp
     , CAST(tw_events.event.start_utc AS TIMESTAMP) as event_start_utc_timestamp
     from ticket_warehouse_events tw_events
     where tw_events.event.location in ('#{Venues::LIST.join("', '")}')
@@ -23,6 +24,7 @@ module Manifest
   , casted_event_data.event_title
   , casted_event_data.event_date
   , casted_event_data.event_start_utc_timestamp
+  , casted_event_data.local_event_start_timestamp
   , casted_event_data.event_id
   from casted_event_data
   where casted_event_data.event_date >= DATE( '#{ev_start_param}' )

@@ -4,15 +4,37 @@ module Manifest
 
       def initialize
         @dynamo_reader, @dynamo_writer = DynamoHelper.create_reader_and_writer(DEFAULT_DDB_TABLE_NAME)
+      
+
+        @delivery_bookkeeper = DeliveryBookkeeper.new(DEFAULT_DDB_TABLE_NAME)
       end
 
       FAKE_EVENT_IDS_1 = ['fake_evvent_id_1', 'fake_evvent_id_2']
       FAKE_EVENT_IDS_2 = ['fake_evvent_id_1', 'fake_evvent_id_2', 'fake_evvent_id_3','fake_evvent_id_4']
-
+      FAKE_EVENT_IDS_3 = ['fake_evvent_id_3','fake_evvent_id_4']
 
       def scratch
-        mock_final_sent
+        test_delivery_bookkeeper
       end
+
+      def test_delivery_bookkeeper
+        cleanup_control_rows
+
+        event_ids = FAKE_EVENT_IDS_1
+        
+        @delivery_bookkeeper.process_preliminary_succeeded(event_ids)
+
+        recheck_rows(event_ids, 'after_prelim')
+
+        puts "sleeping for 5"
+        sleep(5)
+
+        @delivery_bookkeeper.process_final_succeeded(event_ids)
+
+        recheck_rows(event_ids, 'after_final')
+      end
+
+      ##########################################
 
       def mock_cancel_report
         cleanup_control_rows
@@ -50,7 +72,7 @@ module Manifest
       def mock_prelim_sent
         event_ids = FAKE_EVENT_IDS_1
 
-        r = @dynamo_writer.init_pending_reports(event_ids)
+        r = @dynamo_writer.initialize_control_rows(event_ids)
 
         recheck_rows(event_ids, '1')
 
@@ -64,7 +86,7 @@ module Manifest
       ##########################################
 
       def cleanup_control_rows
-        rows = FAKE_EVENT_IDS_1
+        rows = FAKE_EVENT_IDS_2
 
         rows.each do |row|
           @dynamo_writer.delete_control_row(row)

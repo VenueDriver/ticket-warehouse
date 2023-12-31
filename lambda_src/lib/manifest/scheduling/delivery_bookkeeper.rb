@@ -3,9 +3,7 @@ module Manifest
     class DeliveryBookkeeper
       attr_reader :dynamo_writer, :dynamo_reader
       def initialize( control_table_name )
-        dynamo_db_client = Aws::DynamoDB::Client.new
-        @dynamo_writer = Manifest::DynamoWriter.new( dynamo_db_client, control_table_name)      
-        @dyanmo_reader = Manifest::DynamoReader.new( dynamo_db_client, control_table_name)
+        @dynamo_reader, @dynamo_writer = DynamoHelper.create_reader_and_writer(control_table_name)
       end
 
       CategorizedAttempts = Struct.new(
@@ -15,6 +13,14 @@ module Manifest
         :final_failed,
         keyword_init: true
       ) 
+
+      # EmailAttempt = Struct.new(
+      #   :email_was_sent, 
+      #   :ses_raw_email_result,
+      #   :error_message, 
+      #   :error_class, 
+      #   keyword_init:true ) 
+      # use #succeeded? and failed? to determine success or failure
       
       def record_email_attempt_results(email_attempt_results)
         categorized_results = categorize_email_attempt_results(email_attempt_results)
@@ -30,6 +36,8 @@ module Manifest
 
       def process_preliminary_succeeded(event_id_list)
         event_ids_missing_from_dynamo = find_rows_that_need_initialization(event_id_list)
+        
+        #####
         self.dynamo_writer.initialize_control_rows(event_ids_missing_from_dynamo)
 
         event_id_list.each do |event_id|
@@ -61,7 +69,7 @@ module Manifest
       private
 
       def find_rows_that_need_initialization(event_id_list)
-        event_ids_that_exist, event_ids_that_dont_exist = dynamo_reader.partition_event_ids_by_existence(event_id_list)
+        event_ids_that_exist, event_ids_that_dont_exist = dynamo_reader.partition_event_by_exists_and_not_exists(event_id_list)
         event_ids_that_dont_exist
       end
 
