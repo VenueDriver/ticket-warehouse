@@ -399,7 +399,14 @@ export class TicketWarehouseStack extends cdk.Stack {
         's3:ListMultipartUploadParts',
         's3:AbortMultipartUpload',
         's3:CreateBucket',
-        's3:PutObject'
+        's3:PutObject',
+        'glue:GetDatabase',
+        'glue:CreateDatabase',
+        'glue:CreateTable',
+        'glue:GetTable',
+        'glue:GetPartitions',
+        'glue:BatchCreatePartition',
+        'glue:startCrawler'
       ],
       resources: ['*'],
     }));
