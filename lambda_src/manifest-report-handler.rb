@@ -12,19 +12,31 @@ def lambda_handler(event:, context:)
   # First, try to get the parameters from the event
   event_id = event['event_id']
   report_variant_in = event['report_variant']
+  print "From Lambda event:"
+  print "  event_id: #{event_id}\n"
+  print "  report_variant_in: #{report_variant_in}\n"
 
   # If the headers and referer are present, try to get the parameters from the URL
   if event['headers'] && event['headers']['referer']
+    print "Checking headers:"
+
     referer_url = event['headers']['referer']
     uri = URI.parse(referer_url)
     params = CGI.parse(uri.query)
 
     event_id ||= params['event_id'].first
     report_variant_in ||= params['report_variant'].first
+
+    print "  event_id: #{event_id}\n"
+    print "  report_variant_in: #{report_variant_in}\n"
   end
 
   # If report_variant is still not found, default to 'preliminary'
   report_variant_in ||= 'preliminary'
+
+  print "Final values:"
+  print "  event_id: #{event_id}\n"
+  print "  report_variant_in: #{report_variant_in}\n"
 
   Manifest::Main.perform_report(event_id, report_variant_in, $ses_client)
 
