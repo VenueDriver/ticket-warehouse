@@ -16,13 +16,11 @@ def lambda_handler(event:, context:)
   print "  event_id: #{event_id}\n"
   print "  report_variant_in: #{report_variant_in}\n"
 
-  # If the headers and referer are present, try to get the parameters from the URL
-  if event['headers'] && event['headers']['referer']
-    print "Checking headers:"
+  # If rawQueryString is present, try to get the parameters from it
+  if event['rawQueryString']
+    print "Checking rawQueryString:"
 
-    referer_url = event['headers']['referer']
-    uri = URI.parse(referer_url)
-    params = CGI.parse(uri.query)
+    params = CGI.parse(event['rawQueryString'])
 
     event_id ||= params['event_id'].first
     report_variant_in ||= params['report_variant'].first
