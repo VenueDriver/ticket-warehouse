@@ -18,28 +18,24 @@ module Manifest
         end
       
         email_report.send_ses_raw_email!(ses_client,
-          to_addresses: ['Stephane.Tousignant@taogroup.com'],
-          cc_addresses: ['marketing.technology.developers@taogroup.com'])
+          to_addresses: ['Stephane.Tousignant@taogroup.com', 'marketing.technology.developers@taogroup.com'])
       end
 
       def preliminary_report(event_id, ses_client)
         email_report = EmailReport.make_preliminary(event_id)
         
         email_report.send_ses_raw_email!(ses_client,
-          to_addresses: ['Stephane.Tousignant@taogroup.com'],
-          cc_addresses: ['marketing.technology.developers@taogroup.com'])
+          to_addresses: ['Stephane.Tousignant@taogroup.com', 'marketing.technology.developers@taogroup.com'])
       end
 
       def final_report(event_id, ses_client)
         final_report = EmailReport.make_final(event_id)
         accounting_report = EmailReport.make_accounting(event_id,
-          to_addresses: ['Stephane.Tousignant@taogroup.com'],
-          cc_addresses: ['marketing.technology.developers@taogroup.com'])
+          to_addresses: ['Stephane.Tousignant@taogroup.com', 'marketing.technology.developers@taogroup.com'])
           
         final_report.send_ses_raw_email!(ses_client)
         accounting_report.send_ses_raw_email!(ses_client,
-          to_addresses: ['Stephane.Tousignant@taogroup.com'],
-          cc_addresses: ['marketing.technology.developers@taogroup.com'])
+          to_addresses: ['Stephane.Tousignant@taogroup.com', 'marketing.technology.developers@taogroup.com'])
       end
     end
   end
