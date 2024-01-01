@@ -342,7 +342,7 @@ export class TicketWarehouseStack extends cdk.Stack {
     });
 
     // Add function for manifest_delivery_control
-    const manifestDeliveryControlFunction = new Function(this, `ManifestDeliveryControlFunction-${stage}`, {
+    const manifestSendReportFunction = new Function(this, `ManifestSendReportFunction-${stage}`, {
       runtime: Runtime.RUBY_3_2,
       code: Code.fromAsset('lambda_src', {
         bundling: {
@@ -363,7 +363,7 @@ export class TicketWarehouseStack extends cdk.Stack {
       memorySize: 1024,
     });
 
-    manifestDeliveryControlFunction.addToRolePolicy(new iam.PolicyStatement({
+    manifestSendReportFunction.addToRolePolicy(new iam.PolicyStatement({
       actions: [
         'athena:GetNamedQuery',
         'athena:ListNamedQueries',
