@@ -442,7 +442,7 @@ export class TicketWarehouseStack extends cdk.Stack {
     }));
 
     const ruleForDailyTicketSaleReport = new events.Rule(this, `RuleForDailyTicketSaleReport-${stage}`, {
-      schedule: events.Schedule.cron({ minute: '0', hour: '17' })
+      schedule: events.Schedule.cron({ minute: '0', hour: '15' })
     });
     ruleForDailyTicketSaleReport.addTarget(new targets.LambdaFunction(dailyTicketSaleReportFunction));
   
