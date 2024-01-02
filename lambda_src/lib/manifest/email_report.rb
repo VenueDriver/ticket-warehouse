@@ -89,7 +89,8 @@ module Manifest
       pdf_filename, csv_filename = output_structs.filename_pdf, output_structs.filename_csv
 
       if @report_variant.has_pdf?
-        message.attachments[pdf_filename] = self.generate_pdf_content(html_content)
+        #disabled
+        #message.attachments[pdf_filename] = self.generate_pdf_content(html_content)
       end
 
       if @report_variant.has_surcharge_csv?
