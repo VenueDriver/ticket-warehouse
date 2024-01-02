@@ -29,5 +29,9 @@ module Manifest
       s.scratch
     end
 
+    def self.create_manager
+      m = Manifest::Scheduling::Manager.new('production', DEFAULT_DDB_TABLE_NAME)
+    end
+
   end
 end

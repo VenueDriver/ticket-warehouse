@@ -1,11 +1,14 @@
+require 'ses'
 
 module Manifest
   class Scheduling
     class Manager
-      def initialize(env_in = ENV['ENV'],control_table_name)
+      require 'aws-sdk-ses'
+
+      def initialize(env_in = ENV['ENV'], control_table_name)
         @report_selector = Manifest::Scheduling::ReportSelector.new(env_in)
-        ses_object = nil
-        @report_performer = Manifest::Scheduling::ReportPerformer.new(ses_object)
+        @ses_client = Aws::SES::Client.new(region: 'us-west-2') 
+        @report_performer = Manifest::Scheduling::ReportPerformer.new(@ses_client)
         @delivery_bookkeeper = Manifest::Scheduling::DeliveryBookkeeper.new(control_table_name)
       end
 
