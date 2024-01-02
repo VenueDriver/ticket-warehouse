@@ -35,6 +35,7 @@ module Manifest
       end
 
       def process_preliminary_succeeded(event_id_list)
+        event_id_list = Array(event_id_list)
         event_ids_missing_from_dynamo = find_rows_that_need_initialization(event_id_list)
         
         #####
@@ -46,6 +47,7 @@ module Manifest
       end
 
       def process_final_succeeded(event_id_list)
+        event_id_list = Array(event_id_list)
         event_id_list.each do |event_id|
           self.dynamo_writer.mark_final_sent(event_id)
         end
