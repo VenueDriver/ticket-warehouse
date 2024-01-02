@@ -3,6 +3,16 @@ require_relative 'constants.rb'
 
 module Manifest
   class Scheduling
+
+    class EventIdFactory
+      def initialize(table_name)
+        @table_name = table_name
+      end
+
+      def make(event_id)
+        EventIdWrapper.new(event_id, table_name: @table_name)
+      end
+    end
   
     class EventIdWrapper
       attr_reader :event_id, :table_name

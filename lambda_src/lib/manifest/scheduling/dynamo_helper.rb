@@ -72,8 +72,10 @@ module Manifest
       private 
   
       def update_using(event_id,&block)
-        event_id_wrapper = EventIdWrapper.new(event_id, table_name: self.table_name)
-  
+        #event_id_wrapper = EventIdWrapper.new(event_id, table_name: self.table_name)
+        #not showm, it base construct sets up @event_id_factory = EventIdFactory.new(table_name)
+        event_id_wrapper = @event_id_factory.make(event_id)
+
         update_params = block.call(event_id_wrapper) 
   
         execute_update(update_params)

@@ -11,6 +11,7 @@ module Manifest
         @dynamodb = dynamodb
         @table_name = table_name
         raise "table_name must be a string" unless table_name.is_a? String
+        @event_id_factory = EventIdFactory.new(table_name)
       end
     end
     
