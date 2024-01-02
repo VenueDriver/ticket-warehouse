@@ -29,12 +29,12 @@ module Manifest
             !self.succeeded?
           end
 
-          # def self.perform!(&block_that_tries_to_email)
-          #   ses_raw_email_result = block_that_tries_to_email.call
-          #   self.success(ses_raw_email_result)
-          # rescue StandardError => e
-          #   self.failure(e)
-          # end
+          def self.perform!(&block_that_tries_to_email)
+            ses_raw_email_result = block_that_tries_to_email.call
+            self.success(ses_raw_email_result)
+          rescue StandardError => e
+            self.failure(e)
+          end
         end
 
     end

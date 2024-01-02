@@ -7,8 +7,15 @@ module Manifest
         @ses_client = ses_client_instance
       end
 
+      def send_reports_for_categories(event_categories)
+        as_only_ids = event_categories.convert_to_only_ids
+
+        send_reports(final_report_event_ids: as_only_ids.send_final, preliminary_report_event_ids: as_only_ids.send_preliminary)
+      end
+
       # Preconditions: Another class has already determined which reports to send.
       # This class is just performing a list of tasks
+      SendReportResults = Struct.new(:prelim_results, :final_results, keyword_init: true)
       def send_reports(final_report_event_ids:, preliminary_report_event_ids:)
         #email_attempt_results = {}
         prelim_results = {}
@@ -24,10 +31,7 @@ module Manifest
           prelim_results[event_id] = attempt_result
         end
 
-        {
-          prelim_results: prelim_results,
-          final_results: final_results,
-        }
+        SendReportResults.new(prelim_results: prelim_results, final_results: final_results)
       end
 
       #
@@ -59,12 +63,7 @@ module Manifest
       end
 
       def attempt_email(&block)
-        # Goal: use EmailAttempt to record success or failure
-        # if theres an exception, EmailAttempt.failure(exception_object)
-        raw_result = block.call
-        EmailAttempt.success(raw_result)
-      rescue => e
-        EmailAttempt.failure(e)
+        EmailAttempt.perform!(&block)
       end
     end
   end
