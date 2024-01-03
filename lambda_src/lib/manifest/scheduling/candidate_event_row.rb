@@ -16,10 +16,32 @@ module Manifest
         Date.parse(@event_date,'YYYY-MM-DD')
       end
 
+      def summary_for_join_row_inspect(verbose:true)
+        h = {
+          event_title: self.event_title,
+          event_date: self.event_date,
+          event_id: self.event_id,
+          event_start_utc_string: self.event_start_utc_timestamp,
+          local_event_start_string: self.local_event_start_timestamp,
+        #  event_start_utc: self.event_start_utc_timestamp_parsed,
+        }
+
+        # if !verbose
+          
+        # end
+        h
+      end
+
       #example "2024-01-04 06:30:00.000"
       # correcsponds to format string: 'YYYY-MM-DD HH24:MI:SS.MS'
+      
+      CANDIDATE_EVENT_ROW_FORMAT_STRING = 'YYYY-MM-DD HH24:MI:SS.MS'
       def event_start_utc_timestamp_parsed
-        DateTime.parse(@event_start_utc_timestamp, 'YYYY-MM-DD HH24:MI:SS.MS')
+        DateTime.parse(@event_start_utc_timestamp, CANDIDATE_EVENT_ROW_FORMAT_STRING )
+      end
+
+      def local_event_start_timestamp_parsed
+        DateTime.parse(@local_event_start_timestamp, CANDIDATE_EVENT_ROW_FORMAT_STRING )
       end
 
       def self.from_athena_result(hash_from_athena)

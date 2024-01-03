@@ -11,6 +11,38 @@ module Manifest
           !self.control_row_not_present?
         end
 
+        def inspect_hash
+          candidate_event_row_summary = self.candidate_event_row.summary_for_join_row_inspect
+
+          candidate_event_row_summary.merge(
+            control_row_status_abstract: self.control_row_status_abstract,
+            report_status_raw: self.report_status_raw,
+          )
+        end
+
+        def control_row_status_abstract
+          # without the cutoffs we can only show eligibility
+          if needs_preliinary?
+            :eligible_for_preliminary
+          elsif report_canceled?
+            :report_canceled
+          elsif final_already_sent?
+            :final_already_sent
+          elsif prelim_sent?
+            :eligible_for_final
+          else
+            :unknown
+          end
+        end
+
+        def report_status_raw
+          if control_row_not_present?
+            CONTROL_ROW_DOES_NOT_EXIST # 'control_row_does_not_exist'
+          else
+            self.control_row.report_status
+          end
+        end
+
         def event_id
           self.candidate_event_row.event_id
         end
