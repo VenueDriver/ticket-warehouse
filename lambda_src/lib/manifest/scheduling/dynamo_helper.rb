@@ -6,8 +6,6 @@ require_relative 'dynamo_helper/initial_row.rb'
 require_relative 'dynamo_helper/control_row.rb'
 require 'byebug'
 
-require_relative 'dynamo_helper/iniital_row.rb'
-
 module Manifest
   class Scheduling
   

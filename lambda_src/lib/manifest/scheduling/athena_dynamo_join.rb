@@ -1,4 +1,4 @@
-require_relative 'join_row.rb'
+require_relative 'athena_dynamo_join/join_row.rb'
 require_relative 'athena_dynamo_join/event_categories.rb'
 
 module Manifest
