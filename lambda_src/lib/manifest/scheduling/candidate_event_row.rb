@@ -38,6 +38,15 @@ module Manifest
         h
       end
 
+      def short_venue_title
+        title_in_progress = self.venue.dup.downcase
+        title_in_progress.gsub!(' ', '_')
+        title_in_progress.gsub!('nightclub', 'nc')
+        title_in_progress.gsub!('dayclub', 'day')
+
+        title_in_progress
+      end
+
       #example "2024-01-04 06:30:00.000"
       # correcsponds to format string: 'YYYY-MM-DD HH24:MI:SS.MS'
       
