@@ -14,7 +14,12 @@ module Manifest
       end
 
       def categorize(preliminary_cutoff_utc, final_cutoff_utc)
-        event_categories = EventCategories.new_empty
+        event_categories = 
+          EventCategories.new_empty(preliminary_cutoff_utc: preliminary_cutoff_utc, final_cutoff_utc: final_cutoff_utc)
+
+        if preliminary_cutoff_utc.nil? || final_cutoff_utc.nil?
+          raise StandardError.new("preliminary_cutoff_utc and final_cutoff_utc must be non-nil")
+        end
         
         all_join_rows.each do |join_row|
           if join_row.report_canceled?
