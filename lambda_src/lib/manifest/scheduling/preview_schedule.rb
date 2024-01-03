@@ -8,7 +8,9 @@ module Manifest
       end
 
       SummaryStruct = Struct.new(:preliminary_cutoff_utc, :final_cutoff_utc,
-        :preliminary_reports, :final_reports, :canceled_reports, keyword_init: true)
+        :preliminary_reports, :final_reports, :canceled_reports, 
+        :reference_time_in,
+        keyword_init: true)
       def summary_struct
         values = self.report_exec_preview_hash
 
@@ -24,9 +26,11 @@ module Manifest
 
         inspect_hash_categories = @categorized_join_rows.convert_to_join_row_inspect_hash # hashes, this is a struct
       
+        reference_time_utc = inspect_hash_categories.reference_time.strftime("%F %T")
         {
           preliminary_cutoff_utc: prelim_cutoff_utc_str,
           final_cutoff_utc: final_cutoff_utc_str,
+          reference_time_in: reference_time_utc,
           preliminary_reports: inspect_hash_categories.send_preliminary,
           final_reports: inspect_hash_categories.send_final,
           canceled_reports: inspect_hash_categories.report_canceled,

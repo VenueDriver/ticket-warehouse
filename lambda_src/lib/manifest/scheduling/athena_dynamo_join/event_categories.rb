@@ -41,7 +41,8 @@ module Manifest
             no_action_waiting_to_send_final: self.no_action_waiting_to_send_final.map(&mapping_fn),
             preliminary_is_not_yet_due: self.preliminary_is_not_yet_due.map(&mapping_fn), # Renamed key
             preliminary_cutoff_utc: self.preliminary_cutoff_utc,
-            final_cutoff_utc: self.final_cutoff_utc
+            final_cutoff_utc: self.final_cutoff_utc,
+            reference_time: self.reference_time
           )
         end
         
@@ -54,7 +55,8 @@ module Manifest
             no_action_waiting_to_send_final: [],
             preliminary_is_not_yet_due: [] ,
             preliminary_cutoff_utc: preliminary_cutoff_utc,
-            final_cutoff_utc: final_cutoff_utc
+            final_cutoff_utc: final_cutoff_utc,
+            reference_time: :not_set
           )
         end
       end
