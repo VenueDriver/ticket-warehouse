@@ -15,7 +15,9 @@ module Manifest
     ]
 
     MARTECH_TO = [ 'marketing.technology.developers@taogroup.com']
+    MARTECH_PLUS_STEPHANE = MARTECH_TO + ['stephane.tousignant@taogroup.com']
     THIS_EMAIL_IS_HTML_ONLY = "This is html_only"
+    ACCOUNT_PRODUCTION_DESTINATION = MARTECH_PLUS_STEPHANE
 
     class << self
       def make_preliminary(event_id)
@@ -57,6 +59,10 @@ module Manifest
       ses_client.send_raw_email({
         raw_message: { data: message.encoded }
       })
+    end
+
+    def venue_from_output_structs
+      @output_structs_step.venue
     end
 
     def generate_message(sender:DEFAULT_SENDER, to_addresses:DEFAULT_TO)
