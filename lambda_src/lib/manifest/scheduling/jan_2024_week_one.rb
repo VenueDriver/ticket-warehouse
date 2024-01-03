@@ -10,24 +10,28 @@ module Manifest
       def initialize(env_in = 'production')
         @candidate_event_reader = Manifest::Scheduling::CandidateEventReader.new(env_in)
         @delivery_bookkeeper = Manifest::Scheduling::DeliveryBookkeeper.new(DEFAULT_DDB_TABLE_NAME)
-        @dynamo_reader = @delivery_bookkeeper.dynamo_reader
       end
 
-      def set_jewel_jan_01_marked_final
-        event_id = nil ; # pending
+      def set_jan_02_marked_final
+        event_id = '655293b9-089c-4451-8cf2-417f92144192'
 
-        event_id = EVENT_IDS[:jewel_jan_01]
+        mark_report_final_sent(event_id)
+      end
 
+      def mark_report_final_sent(event_id)
         r1 = @delivery_bookkeeper.process_preliminary_succeeded([event_id])
-        #byebug
-        #r1 = @dynamo_reader.fetch_control_row(event_id)
 
-        pp r1 
+        pp r1
 
-        #byebug
         r2 = @delivery_bookkeeper.process_final_succeeded([event_id])
 
         pp r2
+
+        r2
+      end
+
+      def set_jewel_jan_01_marked_final
+        mark_report_final_sent(EVENT_IDS[:jewel_jan_01])
 
       end
     end
