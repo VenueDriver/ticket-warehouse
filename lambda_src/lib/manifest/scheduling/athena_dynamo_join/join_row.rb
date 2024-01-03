@@ -20,6 +20,23 @@ module Manifest
           )
         end
 
+        #"2024-01-04 13:19:15"
+        def abbreviated_summary
+
+          candidate_event_row = self.candidate_event_row
+
+          event_title = candidate_event_row.event_title
+          pattern = '%b%d_%R'
+          local_start_time_parsed = candidate_event_row.local_event_start_timestamp_parsed
+          local_start_strftime1 = local_start_time_parsed.strftime(pattern)
+          venue = candidate_event_row.short_venue_title
+          control_row_status_abstract = self.control_row_status_abstract
+
+          ljust_lenth = 25
+          first_part = "#{local_start_strftime1}_#{venue}".ljust(ljust_lenth, "_")
+          "#{first_part}_#{control_row_status_abstract}"
+        end
+
         def control_row_status_abstract
           # without the cutoffs we can only show eligibility
           if needs_preliminary? 
