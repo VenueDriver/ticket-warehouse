@@ -1,9 +1,10 @@
-require 'ses'
+#require 'ses'
+# need aws ses gem
+require 'aws-sdk-ses'
 
 module Manifest
   class Scheduling
     class Manager
-      require 'aws-sdk-ses'
 
       def initialize(env_in = ENV['ENV'], control_table_name)
         @report_selector = Manifest::Scheduling::ReportSelector.new(env_in)
