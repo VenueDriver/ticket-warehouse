@@ -11,6 +11,7 @@ require_relative 'scheduling/delivery_bookkeeper.rb'
 require_relative 'scheduling/simulator.rb'
 require_relative 'scheduling/examples.rb'
 require_relative 'scheduling/jan_2024_week_one.rb'
+require_relative 'scheduling/preview_schedule.rb'
 
 module Manifest
   class Scheduling 
@@ -37,5 +38,17 @@ module Manifest
       j = Manifest::Scheduling::Jan2024WeekOne.new('production')
     end
 
+
+    def self.test_preview_schedule(ref_time_in = DateTime.now)
+      report_selector = ReportSelector.new('production')
+
+      reference_time = ref_time_in
+
+      categories_struct = report_selector.select_events(reference_time)
+
+      preview_schedule = PreviewSchedule.new(categories_struct )
+
+      preview_schedule.summary_struct
+    end
   end
 end
