@@ -15,6 +15,7 @@ module Manifest
         # preliminary_cutoff_utc, final_cutoff_utc
 
         :preliminary_cutoff_utc, :final_cutoff_utc,
+        :reference_time,
         keyword_init: true
       ) do
         
