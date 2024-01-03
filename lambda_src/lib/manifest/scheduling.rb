@@ -13,6 +13,8 @@ require_relative 'scheduling/examples.rb'
 require_relative 'scheduling/jan_2024_week_one.rb'
 require_relative 'scheduling/preview_schedule.rb'
 
+require 'tzinfo'
+
 module Manifest
   class Scheduling 
 
@@ -38,6 +40,28 @@ module Manifest
       j = Manifest::Scheduling::Jan2024WeekOne.new('production')
     end
 
+    class << self
+      def simulate_report_select_10_pm
+        self.simulate_report_selection_for_pacific_time(DateTime.new(2024,1,3,22))
+      end
+
+      def simulate_report_select_11_pm
+        self.simulate_report_selection_for_pacific_time(DateTime.new(2024,1,3,23))
+      end
+    end
+
+    def self.simulate_report_selection_for_pacific_time(pst_timestamp = DateTime.new(2024,1,3,21))
+      tz = TZInfo::Timezone.get('America/Los_Angeles')
+      utc_timestamp = tz.local_to_utc(pst_timestamp)
+    
+      utc_string = utc_timestamp.strftime("%F %T")
+      pst_string = pst_timestamp.strftime("%F %T")
+
+      puts "pacific_time#{pst_string},  utc_time#{utc_string}"
+      puts "simulate_report_selection_for(#{pst_string})"
+
+      test_preview_schedule(utc_timestamp)
+    end
 
     def self.test_preview_schedule(ref_time_in = DateTime.now)
       report_selector = ReportSelector.new('production')
