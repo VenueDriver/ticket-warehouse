@@ -12,6 +12,7 @@ require_relative 'scheduling/simulator.rb'
 require_relative 'scheduling/examples.rb'
 require_relative 'scheduling/jan_2024_week_one.rb'
 require_relative 'scheduling/preview_schedule.rb'
+require_relative 'scheduling/email_destination_planner.rb'
 
 require 'tzinfo'
 
