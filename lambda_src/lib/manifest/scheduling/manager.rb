@@ -3,6 +3,7 @@ require_relative 'report_selector.rb'
 require_relative 'report_performer.rb'
 require_relative 'delivery_bookkeeper.rb'
 require_relative 'preview_schedule.rb'
+require_relative 'email_destination_planner.rb'
 
 require 'tzinfo'
 
