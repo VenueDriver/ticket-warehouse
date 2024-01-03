@@ -99,6 +99,12 @@ module Manifest
         results.flatten
       end
 
+      def fetch_wrapped_control_rows(event_ids)
+        raw_rows = fetch_control_rows(event_ids)
+
+        ControlRow.map_to_list(raw_rows)
+      end
+
       # BatchGetItem has a limit of 100 items
       # We are using 25 because  requesting too many at once 
       # increases the risk of unprocesssed keys because of the response time
