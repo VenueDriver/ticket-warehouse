@@ -33,5 +33,9 @@ module Manifest
       m = Manifest::Scheduling::Manager.new('production', DEFAULT_DDB_TABLE_NAME)
     end
 
+    def self.create_jan_2024_week_one
+      j = Manifest::Scheduling::Jan2024WeekOne.new('production')
+    end
+
   end
 end
