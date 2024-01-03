@@ -23,18 +23,21 @@ module Manifest
 
         candidate_event_ids = candidate_rows.map(&:event_id)
 
-        control_rows = @dynamo_reader.fetch_control_rows(candidate_event_ids)
+        control_rows = @dynamo_reader.fetch_wrapped_control_rows(candidate_event_ids)
 
         athena_dynamo_join = AthenaDynamoJoin.new(candidate_rows, control_rows)
 
         prelim_cutoff_utc = timestamp_tupple.prelim_cutoff_utc
         final_cutoff_utc = timestamp_tupple.final_cutoff_utc
 
-        athena_dynamo_join.categorize(prelim_cutoff_utc, final_cutoff_utc)
+        categories_struct = athena_dynamo_join.categorize(prelim_cutoff_utc, final_cutoff_utc)
+        categories_struct.reference_time = timestamp_tupple.reference_time
+        categories_struct
       end
 
       TimestampTupple = Struct.new(:start_time, :end_time, 
         :final_cutoff_utc, :prelim_cutoff_utc, 
+        :reference_time,
         keyword_init:true)
 
       private 
@@ -51,7 +54,8 @@ module Manifest
           start_time: start_time, 
           end_time: end_time,
           final_cutoff_utc: final_cutoff_utc, 
-          prelim_cutoff_utc: prelim_cutoff_utc
+          prelim_cutoff_utc: prelim_cutoff_utc,
+          reference_time: reference_time
         )
 
       end

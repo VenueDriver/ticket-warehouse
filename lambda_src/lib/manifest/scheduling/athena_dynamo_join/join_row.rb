@@ -22,7 +22,7 @@ module Manifest
 
         def control_row_status_abstract
           # without the cutoffs we can only show eligibility
-          if needs_preliinary?
+          if needs_preliminary? 
             :eligible_for_preliminary
           elsif report_canceled?
             :report_canceled

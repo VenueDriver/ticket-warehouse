@@ -16,13 +16,19 @@ module Manifest
         Date.parse(@event_date,'YYYY-MM-DD')
       end
 
+      
+      #Users/richardsteinswiger/projects/ticket-warehouse/lambda_src/lib/manifest/scheduling/candidate_event_row.rb:26:in `summary_for_join_row_inspect': undefined method `event_start_utc_timestamp' for #<Manifest::Scheduling::CandidateEventRow:0x000000010e5dbfb
+
       def summary_for_join_row_inspect(verbose:true)
+        event_date_str = self.event_date_parsed.strftime("%F")
+        
+
         h = {
           event_title: self.event_title,
-          event_date: self.event_date,
+          event_date: event_date_str,
           event_id: self.event_id,
-          event_start_utc_string: self.event_start_utc_timestamp,
-          local_event_start_string: self.local_event_start_timestamp,
+          event_start_utc_string: @event_start_utc_timestamp,
+          local_event_start_string: @local_event_start_timestamp,
         #  event_start_utc: self.event_start_utc_timestamp_parsed,
         }
 

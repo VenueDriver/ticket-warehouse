@@ -25,8 +25,8 @@ module Manifest
         inspect_hash_categories = @categorized_join_rows.convert_to_join_row_inspect_hash # hashes, this is a struct
       
         {
-          preliminary_cutoff: prelim_cutoff_utc_str,
-          final_cutoff: final_cutoff_utc_str,
+          preliminary_cutoff_utc: prelim_cutoff_utc_str,
+          final_cutoff_utc: final_cutoff_utc_str,
           preliminary_reports: inspect_hash_categories.send_preliminary,
           final_reports: inspect_hash_categories.send_final,
           canceled_reports: inspect_hash_categories.report_canceled,
