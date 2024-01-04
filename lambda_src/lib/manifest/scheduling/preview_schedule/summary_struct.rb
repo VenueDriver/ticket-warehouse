@@ -4,6 +4,7 @@ module Manifest
     class PreviewSchedule
 
       SummaryStruct = Struct.new(
+        :optional_description,
         :preliminary_cutoff_utc, 
         :final_cutoff_utc,
         :preliminary_reports, :final_reports, :canceled_reports, 
@@ -19,7 +20,14 @@ module Manifest
         :reference_time_in,
         keyword_init: true) do
           def as_hash
-            to_h.transform_keys(&:to_sym)
+            start = {
+              optional_description: self.optional_description,
+              preliminary_cutoff_local: self.prelim_cutoff_in_local_time,
+              final_cutoff_local: self.final_cutoff_in_local_time
+            }
+            
+            rest = to_h.transform_keys(&:to_sym).except(:optional_description, :preliminary_cutoff_local, :final_cutoff_local)
+            start.merge(rest)
           end
         end
         
