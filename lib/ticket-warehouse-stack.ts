@@ -355,7 +355,7 @@ export class TicketWarehouseStack extends cdk.Stack {
           ],
         }
       }),
-      handler: 'manifest-report-handler.lambda_handler',
+      handler: 'manifest-report-handler.send_report_lambda_handler',
       environment: {
         'MANIFEST_DELIVERY_CONTROL_TABLE': manifestDeliveryControlTable.tableName
       },
@@ -392,6 +392,62 @@ export class TicketWarehouseStack extends cdk.Stack {
       resources: ['*'],
     }));
 
+    // Add function for manifest_delivery_control
+    const manifestReportSchedulingFunction = new Function(this, `ManifestReportSchedulingFunction-${stage}`, {
+      runtime: Runtime.RUBY_3_2,
+      code: Code.fromAsset('lambda_src', {
+        bundling: {
+          image: Runtime.RUBY_3_2.bundlingImage,
+          command: [
+            'bash', '-c', [
+              'bundle install --path /asset-output/vendor/bundle',
+              'cp -au . /asset-output/'
+            ].join(' && ')
+          ],
+        }
+      }),
+      handler: 'manifest-report-handler.report_scheduling_lambda_handler',
+      environment: {
+        'MANIFEST_DELIVERY_CONTROL_TABLE': manifestDeliveryControlTable.tableName
+      },
+      timeout: cdk.Duration.minutes(15),
+      memorySize: 1024,
+    });
+
+    manifestReportSchedulingFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: [
+        'athena:GetNamedQuery',
+        'athena:ListNamedQueries',
+        'athena:StartQueryExecution',
+        'athena:GetQueryExecution',
+        'athena:GetQueryResults',
+        'ssm:GetParameter',
+        's3:GetBucketLocation',
+        's3:GetObject',
+        's3:ListBucket',
+        's3:ListBucketMultipartUploads',
+        's3:ListMultipartUploadParts',
+        's3:AbortMultipartUpload',
+        's3:CreateBucket',
+        's3:PutObject',
+        'glue:GetDatabase',
+        'glue:CreateDatabase',
+        'glue:CreateTable',
+        'glue:GetTable',
+        'glue:GetPartitions',
+        'glue:BatchCreatePartition',
+        'glue:startCrawler',
+        'ses:SendEmail',
+        'ses:SendRawEmail'
+      ],
+      resources: ['*'],
+    }));
+
+    const ruleForManifestReportScheduling = new events.Rule(this, `RuleForManifestReportScheduling-${stage}`, {
+      schedule: events.Schedule.cron({ minute: '5' })
+    });
+    ruleForManifestReportScheduling.addTarget(new targets.LambdaFunction(manifestReportSchedulingFunction));
+    
     const dailyTicketSaleReportFunction = new Function(this, `DailyTicketSaleReportFunction-${stage}`, {
       runtime: Runtime.RUBY_3_2,
       code: Code.fromAsset('lambda_src', {

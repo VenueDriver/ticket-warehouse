@@ -6,8 +6,8 @@ require_relative 'lib/manifest/manifest.rb'
 
 $ses_client = Aws::SES::Client.new(region:'us-east-1')
 
-def lambda_handler(event:, context:)
-  puts "Manifest event: #{JSON.pretty_generate(event)}"
+def send_report_lambda_handler(event:, context:)
+  puts "Event: #{JSON.pretty_generate(event)}"
 
   # First, try to get the parameters from the event
   event_id = event['event_id']
@@ -39,4 +39,9 @@ def lambda_handler(event:, context:)
   Manifest::Main.perform_report(event_id, report_variant_in, $ses_client)
 
   { statusCode: 200, body: JSON.generate('ok') }
+end
+
+def report_scheduling_lambda_handler(event:, context:)
+  puts "Event: #{JSON.pretty_generate(event)}"
+
 end
