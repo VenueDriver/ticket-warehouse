@@ -19,7 +19,7 @@ module Manifest
 
     class AlwaysMartech < PlannerBase
       def initialize
-        @to_addresses = EmailReport::MARTECH_TO
+        @to_addresses = Manifest::EmailReport::MARTECH_PLUS_STEPHANE
         super
       end
 
