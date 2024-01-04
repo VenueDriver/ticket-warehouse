@@ -3,8 +3,10 @@ require_relative 'email_attempt_struct.rb'
 module Manifest
   class Scheduling
     class ReportPerformer
-      def initialize(ses_client_instance)
+      def initialize(ses_client_instance, destination_planner)
         @ses_client = ses_client_instance
+        @email_destination_planner = destination_planner
+        @only_prelim_tmp = true
       end
 
       def send_reports_for_categories(event_categories)
@@ -21,9 +23,11 @@ module Manifest
         prelim_results = {}
         final_results = {}     
 
-        final_report_event_ids.each do |event_id|
-          attempt_result = self.attempt_accounting_then_final(event_id)
-          final_results[event_id] = attempt_result
+        if @only_prelim_tmp
+          final_report_event_ids.each do |event_id|
+            attempt_result = self.attempt_accounting_then_final(event_id)
+            final_results[event_id] = attempt_result
+          end
         end
 
         preliminary_report_event_ids.each do |event_id|
@@ -38,6 +42,8 @@ module Manifest
       private
 
       def attempt_accounting_then_final(event_id)
+        raise "not implemented yet"
+
         accounting_attempt_result = self.attempt_email do
           accounting_report = EmailReport.make_accounting(event_id )
           accounting_report.send_ses_raw_email!(@ses_client, to_addresses: EmailReport::MARTECH_TO )
@@ -57,7 +63,10 @@ module Manifest
       def attempt_just_premliminary(event_id)
         attempt_result = self.attempt_email do 
           email_report = EmailReport.make_preliminary(event_id)
-          email_report.send_ses_raw_email!(@ses_client, to_addresses: EmailReport::MARTECH_TO)
+          sender_and_destination_struct = @email_destination_planner.preliminary(email_report)
+          to_addresses = sender_and_destination_struct.to_addresses
+          email_report.send_ses_raw_email!(@ses_client, to_addresses: to_addresses)
+          
         end
         attempt_result
       end

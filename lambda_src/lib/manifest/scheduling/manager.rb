@@ -14,7 +14,10 @@ module Manifest
       def initialize(env_in = ENV['ENV'], control_table_name)
         @report_selector = Manifest::Scheduling::ReportSelector.new(env_in)
         @ses_client = Aws::SES::Client.new(region: 'us-west-2') 
-        @report_performer = Manifest::Scheduling::ReportPerformer.new(@ses_client)
+        
+        @destination_planner = AlwaysMartech.new
+
+        @report_performer = Manifest::Scheduling::ReportPerformer.new(@ses_client, @destination_planner)
         @delivery_bookkeeper = Manifest::Scheduling::DeliveryBookkeeper.new(control_table_name)
       end
 
