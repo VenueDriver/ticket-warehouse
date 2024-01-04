@@ -444,7 +444,7 @@ export class TicketWarehouseStack extends cdk.Stack {
     }));
 
     const ruleForManifestReportScheduling = new events.Rule(this, `RuleForManifestReportScheduling-${stage}`, {
-      schedule: events.Schedule.cron({ minute: '5' })
+      schedule: events.Schedule.rate(cdk.Duration.minutes(5))
     });
     ruleForManifestReportScheduling.addTarget(new targets.LambdaFunction(manifestReportSchedulingFunction));
     
