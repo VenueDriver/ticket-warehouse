@@ -53,9 +53,10 @@ module Manifest
         end
       end
 
+      # Manifest::Scheduling::ReportPerformer::SendReportResults 
       def categorize_email_attempt_results(email_attempt_results)
-        preliminary_results = email_attempt_results[:preliminary]
-        final_results = email_attempt_results[:final]
+        preliminary_results = email_attempt_results.prelim_results
+        final_results = email_attempt_results.final_results
 
         prelim_succeeded, prelim_failed = partition_results_by_success(preliminary_results)
         final_succeeded, final_failed = partition_results_by_success(final_results)
