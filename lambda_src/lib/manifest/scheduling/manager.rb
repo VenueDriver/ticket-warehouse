@@ -90,6 +90,24 @@ module Manifest
         DateTime.now.new_offset(0)
       end
 
+      CurrentAndUpcoming = Struct.new(:current_state, :upcoming_schedule, keyword_init: true) do 
+        def joined_hash
+          {
+            current_state: self.current_state.as_hash,
+            upcoming_schedule: self.upcoming_schedule.as_hash
+          }
+        end
+      end
+
+      def create_current_and_upcoming_1030_pm_previews
+        current_state = self.preview_schedule_for_now_in_pacific_time
+        current_state.optional_description = "Current State"
+        upcoming_schedule = self.preview_next_1030PM_pacific_time
+        upcoming_schedule.optional_description = "Upcoming Schedule (10:30 PM)"
+
+        CurrentAndUpcoming.new(current_state: current_state, upcoming_schedule: upcoming_schedule)
+      end
+
       private 
 
       def next_1030_pm_timestamp_pacific_time
