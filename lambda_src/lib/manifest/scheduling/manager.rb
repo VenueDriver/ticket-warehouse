@@ -30,6 +30,15 @@ module Manifest
         categories
       end
 
+      def preview_next_1030PM_pacific_time
+        next_1030_pm_timestamp = self.next_1030_pm_timestamp_pacific_time
+        preview_schedule_for_pacific_time(next_1030_pm_timestamp)
+      end
+
+      def preview_schedule_for_now_in_pacific_time
+        preview_schedule_for_pacific_time(self.now_in_pacific_time)
+      end
+
       def preview_schedule_for_pacific_time(pacific_time_in)
         pacific_time_zone = TZInfo::Timezone.get('America/Los_Angeles')
         reference_time = pacific_time_zone.local_to_utc(pacific_time_in)
@@ -79,6 +88,22 @@ module Manifest
 
       def self.utc_datetime_now
         DateTime.now.new_offset(0)
+      end
+
+      private 
+
+      def next_1030_pm_timestamp_pacific_time
+        now_in_pacific_time = self.now_in_pacific_time
+
+        next_1030_pm_timestamp = DateTime.new(
+          now_in_pacific_time.year, 
+          now_in_pacific_time.month, 
+          now_in_pacific_time.day, 22, 30, 0, 0, now_in_pacific_time.offset)
+      end
+
+      def now_in_pacific_time
+        pacific_time_zone = TZInfo::Timezone.get('America/Los_Angeles')
+        now_in_pacific_time = pacific_time_zone.utc_to_local(DateTime.now.new_offset(0))
       end
       #
     end
