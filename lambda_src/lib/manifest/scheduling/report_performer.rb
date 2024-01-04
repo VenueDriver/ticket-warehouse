@@ -42,7 +42,7 @@ module Manifest
       private
 
       def attempt_accounting_then_final(event_id)
-        raise "not implemented yet"
+        #raise "not implemented yet"
 
         accounting_attempt_result = self.attempt_email do
           accounting_report = EmailReport.make_accounting(event_id )
