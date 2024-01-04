@@ -41,7 +41,20 @@ def send_report_lambda_handler(event:, context:)
   { statusCode: 200, body: JSON.generate('ok') }
 end
 
+# report_scheduling_lambda_handler(event: event, context: context)
 def report_scheduling_lambda_handler(event:, context:)
   puts "Event: #{JSON.pretty_generate(event)}"
 
+  env_in = ENV['ENV']
+  manager = Manifest::Scheduling::Manager.create_from_lambda_input_event(event,env_in, ses_client:$ses_client)
+
+  demo_email_json_summary = manager.create_demo_email_summary_json_soft_launch
+
+  content = JSON.pretty_generate(demo_email_json_summary)
+
+  puts "Soft Launch: #{content}"
+
+  # tbd: return value
 end
+
+# def self.create_from_lambda_input_event(event,env_in = ENV['ENV'], ses_client:)

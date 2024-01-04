@@ -4,6 +4,7 @@ require_relative 'report_performer.rb'
 require_relative 'delivery_bookkeeper.rb'
 require_relative 'preview_schedule.rb'
 require_relative 'email_destination_planner.rb'
+require_relative 'demo_email_json_summary.rb'
 
 require 'tzinfo'
 require 'json'
@@ -12,15 +13,29 @@ module Manifest
   class Scheduling
     class Manager
       attr_reader :report_selector, :report_performer, :delivery_bookkeeper
-      def initialize(env_in = ENV['ENV'], control_table_name)
+      attr_reader :ses_client
+      def initialize(env_in , control_table_name, ses_client_in:nil)
         @report_selector = Manifest::Scheduling::ReportSelector.new(env_in)
-        region = 'us-east-1'
-        @ses_client = Aws::SES::Client.new(region:region)
+        
+        @ses_client = ses_client_in || self.class.default_ses_client
         
         @destination_planner = AlwaysMartech.new
 
         @report_performer = Manifest::Scheduling::ReportPerformer.new(@ses_client, @destination_planner)
         @delivery_bookkeeper = Manifest::Scheduling::DeliveryBookkeeper.new(control_table_name)
+      end
+
+      DEFAULT_SES_REGION = 'us-east-1'
+
+      def self.create_from_lambda_input_event(event,env_in = ENV['ENV'], ses_client:)
+        control_table_prefix = Scheduling::DEFAULT_DDB_PREFIX
+        control_table_name = "#{control_table_prefix}-#{env_in}"
+        self.new(env_in, control_table_name, ses_client_in:ses_client)
+      end
+
+      def self.default_ses_client(region = DEFAULT_SES_REGION)
+        # not sure if we should use this much
+        Aws::SES::Client.new(region:region)
       end
 
       def calculate_report_selection_using(reference_time = Manager.utc_datetime_now )
@@ -91,70 +106,12 @@ module Manifest
         DateTime.now.new_offset(0)
       end
 
-      CurrentAndUpcoming = Struct.new(:current_state, :upcoming_schedule, keyword_init: true) do 
-        def joined_hash
-          {
-            current_state: self.current_state.as_hash,
-            upcoming_schedule: self.upcoming_schedule.as_hash
-          }
-        end
-      end
+      def create_demo_email_summary_json_soft_launch
+        demo = Manifest::Scheduling::DemoEmailJsonSummary.new(self)
 
-      def create_current_and_upcoming_1030_pm_previews
-        current_state = self.preview_schedule_for_now_in_pacific_time
-        current_state.optional_description = "Current State"
-        upcoming_schedule = self.preview_next_1030PM_pacific_time
-        upcoming_schedule.optional_description = "Upcoming Schedule (10:30 PM)"
-
-        CurrentAndUpcoming.new(current_state: current_state, upcoming_schedule: upcoming_schedule)
-      end
-
-      def demo_email_json_summary
-        ses_client = @ses_client
-
-        current_and_upcoming = self.create_current_and_upcoming_1030_pm_previews
+        current_and_upcoming = demo.create_current_and_upcoming_1030_pm_previews
 
         data_hash = current_and_upcoming.joined_hash
-
-        to_addresses = EmailReport::MARTECH_PLUS_STEPHANE
-
-        formatted_hash = JSON.pretty_generate(data_hash)
-
-        email_body = "Upcoming Manifests Preview:\n\n#{formatted_hash}"
-
-        subject = "Upcoming Manifests Summary Demo" 
-
-        sender = EmailReport::DEFAULT_SENDER
-
-        # to be continued
-          # Create the email message
-        message = {
-          subject: {
-            data: subject,
-          },
-          body: {
-            text: {
-              data: email_body,
-            },
-          },
-        }
-
-          # Build the email request
-        email_request = {
-          source: sender,
-          destination: {
-            to_addresses: to_addresses,
-          },
-          message: message,
-        }
-
-        # Send the email
-        begin
-          response = ses_client.send_email(email_request)
-          puts "Email sent successfully! Message ID: #{response.message_id}"
-        rescue Aws::SES::Errors::ServiceError => error
-          puts "Error sending email: #{error}"
-        end
       end
 
       private 
