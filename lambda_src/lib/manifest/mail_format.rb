@@ -1,3 +1,5 @@
+require 'mail'
+
 module Manifest
   module MailFormat
     extend self

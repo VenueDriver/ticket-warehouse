@@ -3,6 +3,8 @@ require_relative 'ticket_rows.rb'
 require_relative 'erb_template.rb'
 require_relative 'mail_format.rb'
 require_relative 'report_variants.rb'
+require_relative 'surcharge_csv.rb'
+require_relative 'chrome_helper.rb'
 
 module Manifest
   class EmailReport
