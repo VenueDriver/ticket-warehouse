@@ -6,6 +6,7 @@ require_relative 'preview_schedule.rb'
 require_relative 'email_destination_planner.rb'
 
 require 'tzinfo'
+require 'json'
 
 module Manifest
   class Scheduling
@@ -106,6 +107,54 @@ module Manifest
         upcoming_schedule.optional_description = "Upcoming Schedule (10:30 PM)"
 
         CurrentAndUpcoming.new(current_state: current_state, upcoming_schedule: upcoming_schedule)
+      end
+
+      def demo_email_json_summary
+        ses_client = @ses_client
+
+        current_and_upcoming = self.create_current_and_upcoming_1030_pm_previews
+
+        data_hash = current_and_upcoming.joined_hash
+
+        to_addresses = EmailReport::MARTECH_PLUS_STEPHANE
+
+        formatted_hash = JSON.pretty_generate(data_hash)
+
+        email_body = "Upcoming Manifests Preview:\n\n#{formatted_hash}"
+
+        subject = "Upcoming Manifests Summary Demo" 
+
+        sender = EmailReport::DEFAULT_SENDER
+
+        # to be continued
+          # Create the email message
+        message = {
+          subject: {
+            data: subject,
+          },
+          body: {
+            text: {
+              data: email_body,
+            },
+          },
+        }
+
+          # Build the email request
+        email_request = {
+          source: sender,
+          destination: {
+            to_addresses: to_addresses,
+          },
+          message: message,
+        }
+
+        # Send the email
+        begin
+          response = ses_client.send_email(email_request)
+          puts "Email sent successfully! Message ID: #{response.message_id}"
+        rescue Aws::SES::Errors::ServiceError => error
+          puts "Error sending email: #{error}"
+        end
       end
 
       private 
