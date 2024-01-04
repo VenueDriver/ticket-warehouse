@@ -1,21 +1,19 @@
+require_relative 'dynamo_helper.rb'
+require_relative 'delivery_bookkeeper/categorized_attempts.rb'
+require_relative 'delivery_bookkeeper/categorizer.rb'
+
 module Manifest
   class Scheduling
     class DeliveryBookkeeper
       attr_reader :dynamo_writer, :dynamo_reader
+      attr_reader :event_categorizer
       def initialize( control_table_name )
         @dynamo_reader, @dynamo_writer = DynamoHelper.create_reader_and_writer(control_table_name)
+        @event_categorizer = Categorizer.new
       end
-
-      CategorizedAttempts = Struct.new(
-        :preliminary_succeeded ,
-        :preliminary_failed ,
-        :final_succeeded ,
-        :final_failed,
-        keyword_init: true
-      ) 
       
       def record_email_attempt_results(email_attempt_results)
-        categorized_results = categorize_email_attempt_results(email_attempt_results)
+        categorized_results = @event_categorizer.categorize_email_attempt_results(email_attempt_results)
 
         # process preim_succeeded
         # process final_succeeded
@@ -64,36 +62,11 @@ module Manifest
       def single_cancel_report(event_id)
         self.dynamo_writer.cancel_report(event_id)
       end
-
-      # Manifest::Scheduling::ReportPerformer::SendReportResults 
-      def categorize_email_attempt_results(email_attempt_results)
-        preliminary_results = email_attempt_results.prelim_results
-        final_results = email_attempt_results.final_results
-
-        prelim_succeeded, prelim_failed = partition_results_by_success(preliminary_results)
-        final_succeeded, final_failed = partition_results_by_success(final_results)
-
-        CategorizedAttempts.new(
-          preliminary_succeeded: prelim_succeeded.keys,
-          preliminary_failed: prelim_failed.keys,
-          final_succeeded: final_succeeded.keys,
-          final_failed: final_failed.keys
-        )
-      end
       
       private
 
       def find_rows_that_need_initialization(event_id_list)
-        event_ids_that_exist, event_ids_that_dont_exist = dynamo_reader.partition_event_by_exists_and_not_exists(event_id_list)
-        event_ids_that_dont_exist
-      end
-
-      # EmailAttempt = Struct.new( ...
-      # use #succeeded? and failed? to determine success or failure
-
-      def partition_results_by_success(results)
-        success_results, failure_results = results.partition { |_, result| result.succeeded? }
-        [success_results.to_h, failure_results.to_h]
+        @dynamo_reader.find_rows_that_need_initialization(event_id_list)
       end
 
     end

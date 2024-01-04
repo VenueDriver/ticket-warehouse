@@ -152,6 +152,11 @@ module Manifest
 
         [event_ids_that_exist, event_ids_that_dont_exist]
       end
+
+      def find_rows_that_need_initialization(event_id_list)
+        event_ids_that_exist, event_ids_that_dont_exist = self.partition_event_by_exists_and_not_exists(event_id_list)
+        event_ids_that_dont_exist
+      end
   
       private
   
