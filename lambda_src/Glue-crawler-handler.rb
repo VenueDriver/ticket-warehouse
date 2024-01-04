@@ -1,4 +1,5 @@
 require 'json'
+require 'aws-sdk-glue'
 
 def lambda_handler(event:, context:)
   puts "Received event: #{JSON.pretty_generate(event)}"
