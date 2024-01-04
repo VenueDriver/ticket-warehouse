@@ -1,4 +1,5 @@
 require_relative '../distribution_list.rb'
+require_relative '../email_report.rb'
 
 module Manifest
   class Scheduling
@@ -37,7 +38,7 @@ module Manifest
 
     class UsingDistributionList < PlannerBase
       def preliminary(email_report)
-        form_with_sender(EmailReport::MARTECH_PLUS_STEPHANE)
+        form_with_sender(Manifest::EmailReport::MARTECH_PLUS_STEPHANE)
       end
 
       def final(email_report)
@@ -50,7 +51,7 @@ module Manifest
       end
 
       def accounting(email_report)
-        dest = EmailReport::ACCOUNT_PRODUCTION_DESTINATION
+        dest = Manifest::EmailReport::ACCOUNT_PRODUCTION_DESTINATION
         form_with_sender(dest)
       end 
     end
