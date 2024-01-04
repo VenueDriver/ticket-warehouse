@@ -50,8 +50,26 @@ module Manifest
         end
       end
 
+      # does not check for canceled reports or already sent reports
+      # assumes you want to perform the update regardless of the current state
+      def force_reset_to_preliminary_sent(event_id)
+        update_using(event_id) do |event_id_wrapper|  
+          event_id_wrapper.force_reset_to_preliminary_sent_expression
+        end
+      end
+
+      # does not check for canceled reports or already sent reports
+      # assumes you want to perform the update regardless of the current state
+      def force_forward_to_final_sent(event_id, final_sent_at: DateTime.now)
+        update_using(event_id) do |event_id_wrapper|
+          event_id_wrapper.force_forward_to_final_sent_expression(final_sent_at: final_sent_at)
+        end
+      end
+
       REMOVE_CONTROL_ROW_RETURN_VALUES = 'ALL_OLD'
 
+      # This is NOT for canceling reports, use cancel_report instead
+      # We dont expect needing to use this under normal operations
       def delete_control_row(single_event_id)
         response = @dynamodb.delete_item({
           table_name: self.table_name,

@@ -51,15 +51,36 @@ module Manifest
       
         create_update_params(update_expression, expression_attribute_values)
       end
+
+      # Does not check for canceled reports or already sent reports
+      # Assumes caller has already checked for those conditions if required 
+      def force_reset_to_preliminary_sent_expression
+        update_expression = 'SET report_status = :new_report_status, final_sent_at = :final_sent_at'
+        expression_attribute_values = { 
+          ':new_report_status' => PRELIM_SENT,
+          ':final_sent_at' => nil
+        }
+      
+        create_update_params(update_expression, expression_attribute_values)
+      end
+
+      # Will not check for canceled reports or already sent reports
+      # assumes want to perform update uncoditionally
+      def force_forward_to_final_sent_expression(final_sent_at:)
+        # Currently, this is identical to final_sent_update_expression
+        # if this somehow needs to change separately, 
+        # we modify this section 
+        final_sent_update_expression(final_sent_at: final_sent_at)
+      end
   
+      DEFAULT_RETURN_VALUES = 'ALL_NEW'
+      DDB_TIMESTAMP_FORMAT = '%Y-%m-%dT%H:%M:%S.%LZ'
+
       private 
 
-      DDB_TIMESTAMP_FORMAT = '%Y-%m-%dT%H:%M:%S.%LZ'
       def convert_timestamp_to_string_for_dynamodb(timestamp)
         timestamp.strftime(DDB_TIMESTAMP_FORMAT)
       end
-
-      DEFAULT_RETURN_VALUES = 'ALL_NEW'
   
       def create_update_params( update_expression, expression_attribute_values, return_values: DEFAULT_RETURN_VALUES)
         update_item_params = {
