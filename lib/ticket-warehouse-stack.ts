@@ -408,7 +408,8 @@ export class TicketWarehouseStack extends cdk.Stack {
       }),
       handler: 'manifest-report-handler.report_scheduling_lambda_handler',
       environment: {
-        'MANIFEST_DELIVERY_CONTROL_TABLE': manifestDeliveryControlTable.tableName
+        'MANIFEST_DELIVERY_CONTROL_TABLE': manifestDeliveryControlTable.tableName,
+        'ENV': stage,
       },
       timeout: cdk.Duration.minutes(15),
       memorySize: 1024,
