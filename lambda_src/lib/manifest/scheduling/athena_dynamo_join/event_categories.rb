@@ -32,6 +32,20 @@ module Manifest
           end
         end
 
+        def clone_without_send_final
+          self.class.new(
+            send_preliminary: self.send_preliminary,
+            send_final: [],
+            final_already_sent: self.final_already_sent,
+            report_canceled: self.report_canceled,
+            no_action_waiting_to_send_final: self.no_action_waiting_to_send_final,
+            preliminary_is_not_yet_due: self.preliminary_is_not_yet_due,
+            preliminary_cutoff_utc: self.preliminary_cutoff_utc,
+            final_cutoff_utc: self.final_cutoff_utc,
+            reference_time: self.reference_time
+          )
+        end
+
         def convert_with_mapping_fn(&mapping_fn)
           self.class.new(
             send_preliminary: self.send_preliminary.map(&mapping_fn),

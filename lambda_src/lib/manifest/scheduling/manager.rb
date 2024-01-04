@@ -44,6 +44,26 @@ module Manifest
         preview.summary_struct
       end
 
+      def process_prelim_only_using(reference_time = Manager.utc_datetime_now )
+        # calculate_report_selection_using returns a CategorizedJoinRows
+        report_selection = self.calculate_report_selection_using(reference_time.to_datetime)
+        prelim_only_selection = report_selection.clone_without_send_final
+        prelim_only_selection.send_final = [] 
+        report_selection = nil
+
+        report_send_results = @report_performer.send_reports_for_categories(prelim_only_selection)
+        #byebug
+
+        bookkeeper_response = @delivery_bookkeeper.record_email_attempt_results(report_send_results)
+        
+        [prelim_only_selection, report_send_results, bookkeeper_response]
+      end
+
+      def process_prelim_only_from_pst(pst_timestamp)
+        utc_timestamp = TZInfo::Timezone.get('America/Los_Angeles').local_to_utc(pst_timestamp)
+        self.process_prelim_only_using(utc_timestamp)
+      end
+
       def process_main_report_schedule_using(reference_time = Manager.utc_datetime_now )
         reference_time = reference_time.to_datetime
 
