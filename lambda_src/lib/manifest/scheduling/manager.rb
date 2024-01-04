@@ -10,7 +10,7 @@ require 'tzinfo'
 module Manifest
   class Scheduling
     class Manager
-
+      attr_reader :report_selector, :report_performer, :delivery_bookkeeper
       def initialize(env_in = ENV['ENV'], control_table_name)
         @report_selector = Manifest::Scheduling::ReportSelector.new(env_in)
         region = 'us-east-1'
