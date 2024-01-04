@@ -14,15 +14,28 @@ module Manifest
     class Manager
       attr_reader :report_selector, :report_performer, :delivery_bookkeeper
       attr_reader :ses_client
-      def initialize(env_in = ENV['ENV'], control_table_name)
+      def initialize(env_in , control_table_name, ses_client_in:nil)
         @report_selector = Manifest::Scheduling::ReportSelector.new(env_in)
-        region = 'us-east-1'
-        @ses_client = Aws::SES::Client.new(region:region)
+        
+        @ses_client = ses_client_in || self.class.default_ses_client
         
         @destination_planner = AlwaysMartech.new
 
         @report_performer = Manifest::Scheduling::ReportPerformer.new(@ses_client, @destination_planner)
         @delivery_bookkeeper = Manifest::Scheduling::DeliveryBookkeeper.new(control_table_name)
+      end
+
+      DEFAULT_SES_REGION = 'us-east-1'
+
+      def self.create_from_lambda_input_event(event,env_in = ENV['ENV'], ses_client:)
+        control_table_prefix = Scheduling::DEFAULT_DDB_PREFIX
+        control_table_name = "#{control_table_prefix}-#{env_in}"
+        self.new(env_in, control_table_name, ses_client_in:ses_client)
+      end
+
+      def self.default_ses_client(region = DEFAULT_SES_REGION)
+        # not sure if we should use this much
+        Aws::SES::Client.new(region:region)
       end
 
       def calculate_report_selection_using(reference_time = Manager.utc_datetime_now )
@@ -91,6 +104,14 @@ module Manifest
 
       def self.utc_datetime_now
         DateTime.now.new_offset(0)
+      end
+
+      def create_demo_email_summary_json_soft_launch
+        demo = Manifest::Scheduling::DemoEmailJsonSummary.new(self)
+
+        current_and_upcoming = demo.create_current_and_upcoming_1030_pm_previews
+
+        data_hash = current_and_upcoming.joined_hash
       end
 
       private 
