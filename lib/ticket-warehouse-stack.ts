@@ -417,6 +417,7 @@ export class TicketWarehouseStack extends cdk.Stack {
 
     manifestReportSchedulingFunction.addToRolePolicy(new iam.PolicyStatement({
       actions: [
+        'dynamodb:BatchGetItem',
         'athena:GetNamedQuery',
         'athena:ListNamedQueries',
         'athena:StartQueryExecution',
