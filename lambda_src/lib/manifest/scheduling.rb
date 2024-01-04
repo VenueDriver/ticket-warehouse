@@ -37,6 +37,11 @@ module Manifest
       m = Manifest::Scheduling::Manager.new('production', DEFAULT_DDB_TABLE_NAME)
     end
 
+    def self.test_execute_current_prelim
+      m = self.create_manager
+      m.process_main_report_schedule_using
+    end
+
     def self.create_jan_2024_week_one
       j = Manifest::Scheduling::Jan2024WeekOne.new('production')
     end
