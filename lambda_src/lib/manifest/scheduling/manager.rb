@@ -19,8 +19,8 @@ module Manifest
         
         @ses_client = ses_client_in || self.class.default_ses_client
         
-        #@destination_planner = AlwaysMartech.new
-        @destination_planner = AlwaysRich.new
+        @destination_planner = AlwaysMartech.new
+        #@destination_planner = AlwaysRich.new
 
         @report_performer = Manifest::Scheduling::ReportPerformer.new(@ses_client, @destination_planner)
         @delivery_bookkeeper = Manifest::Scheduling::DeliveryBookkeeper.new(control_table_name)
@@ -125,7 +125,7 @@ module Manifest
         demo.demo_email_json_summary
       end
 
-      private 
+       
 
       def next_1030_pm_timestamp_pacific_time
         now_in_pacific_time = self.now_in_pacific_time
@@ -133,7 +133,23 @@ module Manifest
         next_1030_pm_timestamp = DateTime.new(
           now_in_pacific_time.year, 
           now_in_pacific_time.month, 
-          now_in_pacific_time.day, 22, 30, 0, 0, now_in_pacific_time.offset)
+          now_in_pacific_time.day, 22, 31, 0, 0, now_in_pacific_time.offset)
+      end
+
+      def convert_to_pacific(utc_timestamp)
+        tz = self.create_pacific_time_zone
+        tz.utc_to_local(utc_timestamp)
+      end
+
+      def convert_to_utc(pacific_timestamp)
+        tz = self.create_pacific_time_zone
+        tz.local_to_utc(pacific_timestamp)
+      end
+
+      private
+
+      def create_pacific_time_zone
+        tz = TZInfo::Timezone.get('America/Los_Angeles')
       end
 
       def now_in_pacific_time
