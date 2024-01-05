@@ -16,6 +16,7 @@ module Manifest
       'ryan.porter@taogroup.com',
     ]
 
+    RICH_ONLY = ['richard.steinschneider@taogroup.com']
     MARTECH_TO = [ 'marketing.technology.developers@taogroup.com']
     MARTECH_PLUS_STEPHANE = MARTECH_TO + ['stephane.tousignant@taogroup.com']
     THIS_EMAIL_IS_HTML_ONLY = "This is html_only"
