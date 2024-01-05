@@ -49,20 +49,29 @@ module Manifest
       private
 
       def attempt_accounting_then_final(event_id)
+        puts "Manifest::Scheduling::ReportPerformer#attempt_accounting_then_final(#{event_id})"
         #raise "not implemented yet"
+
+        puts "  Sending accounting variant."
 
         accounting_attempt_result = self.attempt_email do
           accounting_report = EmailReport.make_accounting(event_id )
-          accounting_report.send_ses_raw_email!(@ses_client, to_addresses: EmailReport::MARTECH_TO )
+          accounting_report.send_ses_raw_email!(@ses_client, to_addresses: EmailReport::MARTECH_PLUS_STEPHANE )
         end
 
         if accounting_attempt_result.failed?
           return accounting_attempt_result
         end
 
+        puts "  Sending final variant."
+
         final_attempt_result = self.attempt_email do
           final_report = EmailReport.make_final(event_id)
-          final_report.send_ses_raw_email!(@ses_client, to_addresses: EmailReport::MARTECH_TO )
+          sender_and_destination_struct = @email_destination_planner.final(final_report)
+          to_addresses = sender_and_destination_struct.to_addresses
+          to_addresses << EmailReport::MARTECH_PLUS_STEPHANE
+          puts "To addresses: #{to_addresses}"
+          final_report.send_ses_raw_email!(@ses_client, to_addresses: to_addresses )
         end
         final_attempt_result
       end
@@ -73,7 +82,6 @@ module Manifest
           sender_and_destination_struct = @email_destination_planner.preliminary(email_report)
           to_addresses = sender_and_destination_struct.to_addresses
           email_report.send_ses_raw_email!(@ses_client, to_addresses: to_addresses)
-          
         end
         attempt_result
       end

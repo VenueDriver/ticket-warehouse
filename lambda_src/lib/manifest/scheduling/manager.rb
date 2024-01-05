@@ -37,8 +37,10 @@ module Manifest
       def self.set_destination_planner_from_global_settings
         use_distro = Scheduling.use_distribution_list
         if use_distro
+          puts "Using distribution list."
           UsingDistributionList.new
         else 
+          puts "Using Martech log distribution."
           #AlwaysMartech.new
 
           # same as AlwaysMartech, it still sends to @to_addresses

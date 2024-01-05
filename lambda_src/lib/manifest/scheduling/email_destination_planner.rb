@@ -8,6 +8,7 @@ module Manifest
 
     class PlannerBase
       def initialize
+        puts "PlannerBase#initialize"
         @sender_email_address = EmailReport::DEFAULT_SENDER
       end
 
@@ -19,19 +20,23 @@ module Manifest
 
     class AlwaysMartech < PlannerBase
       def initialize
-        @to_addresses = Manifest::EmailReport::MARTECH_PLUS_STEPHANE
+        puts "AlwaysMartech#intialize"
+        @to_addresses = Manifest::EmailReport::MARTECH_TO
         super
       end
 
       def preliminary(email_report)
+        puts "AlwaysMartech#preliminary"
         form_with_sender(@to_addresses)
       end
 
       def final(email_report)
+        puts "AlwaysMartech#final"
         form_with_sender(@to_addresses)
       end
 
       def accounting(email_report)
+        puts "AlwaysMartech#accounting"
         form_with_sender(@to_addresses)
       end
     end
@@ -39,6 +44,7 @@ module Manifest
     class MartechLogDistroLookup < AlwaysMartech
 
       def final(email_report)
+        puts "MartechLogDistroLookup#final"
         venue = email_report.venue_from_output_structs
         distro_mapping = Manifest::DistributionList.production_mapping
         distro_email_address = distro_mapping.fetch(venue)
@@ -50,11 +56,14 @@ module Manifest
 
     class UsingDistributionList < PlannerBase
       def preliminary(email_report)
+        puts "UsingDistributionList#preliminary"
         form_with_sender(Manifest::EmailReport::MARTECH_PLUS_STEPHANE)
       end
 
       def final(email_report)
+        puts "UsingDistributionList#final"
         #lookup distro partner from venue name
+        email_report.process
         venue = email_report.venue_from_output_structs
         distro_mapping = Manifest::DistributionList.production_mapping
         to_address = distro_mapping.fetch(venue)
@@ -62,6 +71,7 @@ module Manifest
       end
 
       def accounting(email_report)
+        puts "UsingDistributionList#accounting"
         dest = Manifest::EmailReport::ACCOUNT_PRODUCTION_DESTINATION
         form_with_sender(dest)
       end 
