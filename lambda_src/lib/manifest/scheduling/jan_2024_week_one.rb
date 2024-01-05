@@ -8,7 +8,7 @@ module Manifest
         @manager = Scheduling.create_manager
         @delivery_bookkeeper = @manager.delivery_bookkeeper
         @report_performer = @manager.report_performer
-        @report_performer.limit_final_reports_to_one_at_a_time!
+        #@report_performer.limit_final_reports_to_one_at_a_time!
       end
 
       def reset_all_finals!
