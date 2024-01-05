@@ -19,7 +19,7 @@ module Manifest
         
         @ses_client = ses_client_in || self.class.default_ses_client
         
-        @destination_planner = AlwaysMartech.new
+        @destination_planner = self.class.set_destination_planner_from_global_settings
         #@destination_planner = AlwaysRich.new
 
         @report_performer = Manifest::Scheduling::ReportPerformer.new(@ses_client, @destination_planner)
@@ -32,6 +32,20 @@ module Manifest
         control_table_prefix = Scheduling::DEFAULT_DDB_PREFIX
         control_table_name = "#{control_table_prefix}-#{env_in}"
         self.new(env_in, control_table_name, ses_client_in:ses_client)
+      end
+
+      def self.set_destination_planner_from_global_settings
+        use_distro = Scheduling.use_distribution_list
+        if use_distro
+          UsingDistributionList.new
+        else 
+          #AlwaysMartech.new
+
+          # same as AlwaysMartech, it still sends to @to_addresses
+          # but it will attempt to lookup and log
+          # to console the live destination
+          MartechLogDistroLookup.new 
+        end
       end
 
       def self.create_run_options(event)
