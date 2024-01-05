@@ -24,6 +24,10 @@ module Manifest
     #   m = self.create_manager
     #   m.process_main_report_schedule_using
     # end
+    class << self
+      attr_accessor :use_distribution_list
+    end
+    self.use_distribution_list = false
 
     def self.create_manager
       env_in = 'production'
