@@ -27,7 +27,7 @@ module Manifest
     class << self
       attr_accessor :use_distribution_list
     end
-    self.use_distribution_list = false
+    self.use_distribution_list = true
 
     def self.create_manager
       env_in = 'production'
