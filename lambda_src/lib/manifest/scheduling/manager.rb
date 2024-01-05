@@ -19,7 +19,8 @@ module Manifest
         
         @ses_client = ses_client_in || self.class.default_ses_client
         
-        @destination_planner = AlwaysMartech.new
+        #@destination_planner = AlwaysMartech.new
+        @destination_planner = AlwaysRich.new
 
         @report_performer = Manifest::Scheduling::ReportPerformer.new(@ses_client, @destination_planner)
         @delivery_bookkeeper = Manifest::Scheduling::DeliveryBookkeeper.new(control_table_name)
