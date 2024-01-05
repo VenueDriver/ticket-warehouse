@@ -3,6 +3,7 @@
 require 'thor'
 require_relative 'lib/quicksight'
 require_relative 'lib/manager'
+require_relative 'lambda_src/lib/manifest/manifest.rb'
 
 module Manager
   class CLI < Thor
@@ -34,6 +35,22 @@ module Manager
     desc "daily", "Generate Daily Ticket Sale Report"
     def daily
       Manager::Core.daily
+    end
+
+    desc "manifest", "Run Manifest Report scheduling logic."
+    def manifest
+        event = {}
+
+        # Global setting to switch on distro lists example
+        #Manifest::Scheduling.use_distribution_list = true
+        puts "Manifest::Scheduling.use_distribution_list: #{Manifest::Scheduling.use_distribution_list}"
+
+        #env_in = 'production' #;ENV['ENV']
+        env_in = ENV['ENV']
+        manager = Manifest::Scheduling::Manager.create_from_lambda_input_event(event,env_in, ses_client:$ses_client)
+        run_options = Manifest::Scheduling::Manager.create_run_options(event)
+
+        r = manager.process_reports_using_now
     end
 
     desc "quickight", "Manage Quicksight resources."
