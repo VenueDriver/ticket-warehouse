@@ -24,6 +24,22 @@ module Manifest
     #   m = self.create_manager
     #   m.process_main_report_schedule_using
     # end
+    class << self
+      attr_accessor :use_distribution_list
+    end
+    self.use_distribution_list = false
+
+    def self.create_manager
+      env_in = 'production'
+      control_table_name = 'manifest_delivery_control-production'
+      ses_client = Scheduling::Manager.default_ses_client
+      Scheduling::Manager.new(env_in, control_table_name, ses_client_in:ses_client)
+    end
+
+    def self.create_jan_2024
+      
+      j = Jan2024WeekOne.new
+    end
 
     def self.test_preview_schedule(ref_time_in = DateTime.now)
       report_selector = ReportSelector.new('production')

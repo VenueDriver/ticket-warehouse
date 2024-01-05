@@ -36,13 +36,24 @@ module Manifest
       end
     end
 
+    class MartechLogDistroLookup < AlwaysMartech
+
+      def final(email_report)
+        venue = email_report.venue_from_output_structs
+        distro_mapping = Manifest::DistributionList.production_mapping
+        distro_email_address = distro_mapping.fetch(venue)
+        puts "MartechLogDistroLookup: venue: #{venue} to_address: #{distro_email_address}"
+
+        form_with_sender(@to_addresses)
+      end
+    end
+
     class UsingDistributionList < PlannerBase
       def preliminary(email_report)
         form_with_sender(Manifest::EmailReport::MARTECH_PLUS_STEPHANE)
       end
 
       def final(email_report)
-        raise "Not implemented"
         #lookup distro partner from venue name
         venue = email_report.venue_from_output_structs
         distro_mapping = Manifest::DistributionList.production_mapping

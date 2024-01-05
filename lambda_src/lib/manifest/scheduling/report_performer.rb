@@ -6,7 +6,12 @@ module Manifest
       def initialize(ses_client_instance, destination_planner)
         @ses_client = ses_client_instance
         @email_destination_planner = destination_planner
-        @only_prelim_tmp = true
+
+        @final_report_limit_1 = false
+      end
+
+      def limit_final_reports_to_one_at_a_time!
+        @final_report_limit_1 = true
       end
 
       def send_reports_for_categories(event_categories)
@@ -23,11 +28,13 @@ module Manifest
         prelim_results = {}
         final_results = {}     
 
-        if @only_prelim_tmp
-          final_report_event_ids.each do |event_id|
-            attempt_result = self.attempt_accounting_then_final(event_id)
-            final_results[event_id] = attempt_result
-          end
+        # if @final_report_limit_1
+        #   final_report_event_ids = Array(final_report_event_ids.first)
+        # end
+
+        final_report_event_ids.each do |event_id|
+          attempt_result = self.attempt_accounting_then_final(event_id)
+          final_results[event_id] = attempt_result
         end
 
         preliminary_report_event_ids.each do |event_id|

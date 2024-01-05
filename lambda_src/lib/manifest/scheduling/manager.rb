@@ -19,7 +19,8 @@ module Manifest
         
         @ses_client = ses_client_in || self.class.default_ses_client
         
-        @destination_planner = AlwaysMartech.new
+        @destination_planner = self.class.set_destination_planner_from_global_settings
+        #@destination_planner = AlwaysRich.new
 
         @report_performer = Manifest::Scheduling::ReportPerformer.new(@ses_client, @destination_planner)
         @delivery_bookkeeper = Manifest::Scheduling::DeliveryBookkeeper.new(control_table_name)
@@ -31,6 +32,24 @@ module Manifest
         control_table_prefix = Scheduling::DEFAULT_DDB_PREFIX
         control_table_name = "#{control_table_prefix}-#{env_in}"
         self.new(env_in, control_table_name, ses_client_in:ses_client)
+      end
+
+      def self.set_destination_planner_from_global_settings
+        use_distro = Scheduling.use_distribution_list
+        if use_distro
+          UsingDistributionList.new
+        else 
+          #AlwaysMartech.new
+
+          # same as AlwaysMartech, it still sends to @to_addresses
+          # but it will attempt to lookup and log
+          # to console the live destination
+          MartechLogDistroLookup.new 
+        end
+      end
+
+      def self.create_run_options(event)
+        RunOptions.new(event)
       end
 
       def self.default_ses_client(region = DEFAULT_SES_REGION)
@@ -89,6 +108,11 @@ module Manifest
         self.process_prelim_only_using(utc_timestamp)
       end
 
+      def process_reports_using_now
+        now = Manager.utc_datetime_now
+        process_main_report_schedule_using(now)
+      end
+
       def process_main_report_schedule_using(reference_time = Manager.utc_datetime_now )
         reference_time = reference_time.to_datetime
 
@@ -114,7 +138,13 @@ module Manifest
         data_hash = current_and_upcoming.joined_hash
       end
 
-      private 
+      def send_demo_email_summary_soft_launch
+        demo = Manifest::Scheduling::DemoEmailJsonSummary.new(self)
+
+        demo.demo_email_json_summary
+      end
+
+       
 
       def next_1030_pm_timestamp_pacific_time
         now_in_pacific_time = self.now_in_pacific_time
@@ -122,7 +152,23 @@ module Manifest
         next_1030_pm_timestamp = DateTime.new(
           now_in_pacific_time.year, 
           now_in_pacific_time.month, 
-          now_in_pacific_time.day, 22, 30, 0, 0, now_in_pacific_time.offset)
+          now_in_pacific_time.day, 22, 31, 0, 0, now_in_pacific_time.offset)
+      end
+
+      def convert_to_pacific(utc_timestamp)
+        tz = self.create_pacific_time_zone
+        tz.utc_to_local(utc_timestamp)
+      end
+
+      def convert_to_utc(pacific_timestamp)
+        tz = self.create_pacific_time_zone
+        tz.local_to_utc(pacific_timestamp)
+      end
+
+      private
+
+      def create_pacific_time_zone
+        tz = TZInfo::Timezone.get('America/Los_Angeles')
       end
 
       def now_in_pacific_time
@@ -130,6 +176,16 @@ module Manifest
         now_in_pacific_time = pacific_time_zone.utc_to_local(DateTime.now.new_offset(0))
       end
       #
+    end
+
+    class RunOptions
+      def initialize(raw_lambda_event)
+        @raw_lambda_event = raw_lambda_event
+      end
+
+      def try_send_summary_email?
+        @raw_lambda_event['try_send_summary_email'] == 'try_send_summary_email'
+      end
     end
   end
 end
