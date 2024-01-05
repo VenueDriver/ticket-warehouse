@@ -36,6 +36,25 @@ module Manifest
       end
     end
 
+    class AlwaysRich < PlannerBase
+      #dont use this after Jan 05
+      def initialize
+        @to_addresses = Manifest::EmailReport::RICH_ONLY
+      end
+
+      def preliminary(email_report)
+        form_with_sender(@to_addresses)
+      end
+
+      def final(email_report)
+        form_with_sender(@to_addresses)
+      end
+
+      def accounting(email_report)
+        form_with_sender(@to_addresses)
+      end
+    end
+
     class UsingDistributionList < PlannerBase
       def preliminary(email_report)
         form_with_sender(Manifest::EmailReport::MARTECH_PLUS_STEPHANE)
