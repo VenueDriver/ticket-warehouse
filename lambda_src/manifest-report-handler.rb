@@ -50,16 +50,17 @@ def report_scheduling_lambda_handler(event:, context:)
   manager = Manifest::Scheduling::Manager.create_from_lambda_input_event(event,env_in, ses_client:$ses_client)
   run_options = Manifest::Scheduling::Manager.create_run_options(event)
 
-  summary = manager.create_demo_email_summary_json_soft_launch
+  # summary = manager.create_demo_email_summary_json_soft_launch
+  # content = JSON.pretty_generate(summary)
+  # puts "Soft Launch: #{content}"
 
-  content = JSON.pretty_generate(summary)
+  r = manager.process_reports_using_now
 
-  puts "Soft Launch: #{content}"
-
-  if run_options.try_send_summary_email?
-    manager.send_demo_email_summary_soft_launch
-  end
+  # if run_options.try_send_summary_email?
+  #   manager.send_demo_email_summary_soft_launch
+  # end
   # tbd: return value
+  r
 end
 
 def simulate_report_handler

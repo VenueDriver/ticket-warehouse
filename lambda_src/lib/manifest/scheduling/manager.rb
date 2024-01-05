@@ -94,6 +94,11 @@ module Manifest
         self.process_prelim_only_using(utc_timestamp)
       end
 
+      def process_reports_using_now
+        now = Manager.utc_datetime_now
+        process_main_report_schedule_using(now)
+      end
+
       def process_main_report_schedule_using(reference_time = Manager.utc_datetime_now )
         reference_time = reference_time.to_datetime
 
