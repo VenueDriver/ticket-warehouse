@@ -59,6 +59,7 @@ module Manifest
 
     def send_ses_raw_email!(ses_client,**kw_args)
       message = generate_message(**kw_args)
+      puts "Sending message:\n#{message}"
       ses_client.send_raw_email({
         raw_message: { data: message.encoded }
       })
