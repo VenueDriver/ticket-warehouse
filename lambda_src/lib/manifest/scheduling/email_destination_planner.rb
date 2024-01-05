@@ -36,21 +36,14 @@ module Manifest
       end
     end
 
-    class AlwaysRich < PlannerBase
-      #dont use this after Jan 05
-      def initialize
-        @to_addresses = Manifest::EmailReport::RICH_ONLY
-      end
-
-      def preliminary(email_report)
-        form_with_sender(@to_addresses)
-      end
+    class MartechLogDistroLookup < AlwaysMartech
 
       def final(email_report)
-        form_with_sender(@to_addresses)
-      end
+        venue = email_report.venue_from_output_structs
+        distro_mapping = Manifest::DistributionList.production_mapping
+        distro_email_address = distro_mapping.fetch(venue)
+        puts "MartechLogDistroLookup: venue: #{venue} to_address: #{distro_email_address}"
 
-      def accounting(email_report)
         form_with_sender(@to_addresses)
       end
     end
@@ -61,7 +54,6 @@ module Manifest
       end
 
       def final(email_report)
-        raise "Not implemented"
         #lookup distro partner from venue name
         venue = email_report.venue_from_output_structs
         distro_mapping = Manifest::DistributionList.production_mapping
