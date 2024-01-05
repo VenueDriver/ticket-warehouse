@@ -32,6 +32,11 @@ module Manifest
       Scheduling::Manager.new(env_in, control_table_name, ses_client_in:ses_client)
     end
 
+    def self.create_jan_2024
+      
+      j = Jan2024WeekOne.new
+    end
+
     def self.test_preview_schedule(ref_time_in = DateTime.now)
       report_selector = ReportSelector.new('production')
 
