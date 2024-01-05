@@ -420,6 +420,8 @@ export class TicketWarehouseStack extends cdk.Stack {
       actions: [
         'dynamodb:BatchGetItem',
         'dynamodb:BatchWriteItem',
+        'dynamodb:DeleteItem',
+        'dynamodb:UpdateItem',
         'athena:GetNamedQuery',
         'athena:ListNamedQueries',
         'athena:StartQueryExecution',
