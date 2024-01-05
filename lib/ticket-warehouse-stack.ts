@@ -412,6 +412,7 @@ export class TicketWarehouseStack extends cdk.Stack {
         'ENV': stage,
       },
       timeout: cdk.Duration.minutes(15),
+      reservedConcurrentExecutions: 1
       memorySize: 1024,
     });
 
