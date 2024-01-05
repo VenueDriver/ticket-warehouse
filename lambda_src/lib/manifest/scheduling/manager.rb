@@ -57,10 +57,17 @@ module Manifest
         Aws::SES::Client.new(region:region)
       end
 
-      def calculate_report_selection_using(reference_time = Manager.utc_datetime_now )
+      require 'pp'
+
+      def calculate_report_selection_using(reference_time = Manager.utc_datetime_now)
+        puts "calculate_report_selection_using: #{reference_time}"
+
         reference_time = reference_time.to_datetime
 
         categories = @report_selector.select_events(reference_time)
+
+        puts "  categories:"
+        pp categories
 
         categories
       end
@@ -114,6 +121,8 @@ module Manifest
       end
 
       def process_main_report_schedule_using(reference_time = Manager.utc_datetime_now )
+        puts "process_main_report_schedule_using: #{reference_time}"
+
         reference_time = reference_time.to_datetime
 
         report_selection = self.calculate_report_selection_using(reference_time)

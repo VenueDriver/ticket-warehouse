@@ -70,6 +70,9 @@ GEM
     net-smtp (0.4.0)
       net-protocol
     netrc (0.11.0)
+    pp (0.5.0)
+      prettyprint
+    prettyprint (0.2.0)
     pry (0.14.2)
       coderay (~> 1.1)
       method_source (~> 1.0)
@@ -117,6 +120,7 @@ DEPENDENCIES
   concurrent-ruby (~> 1.2, >= 1.2.2)
   dotenv (~> 2.8, >= 2.8.1)
   mail (~> 2.8, >= 2.8.1)
+  pp (~> 0.5.0)
   pry
   rest-client (~> 2.1)
   rexml (~> 3.2, >= 3.2.6)
