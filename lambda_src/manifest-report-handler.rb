@@ -45,14 +45,14 @@ end
 def report_scheduling_lambda_handler(event:, context:)
   puts "Event: #{JSON.pretty_generate(event)}"
 
+  # Global setting to switch on distro lists example
+  #Manifest::Scheduling.use_distribution_list = true
+  puts "Manifest::Scheduling.use_distribution_list: #{Manifest::Scheduling.use_distribution_list}"
+
   #env_in = 'production' #;ENV['ENV']
   env_in = ENV['ENV']
   manager = Manifest::Scheduling::Manager.create_from_lambda_input_event(event,env_in, ses_client:$ses_client)
   run_options = Manifest::Scheduling::Manager.create_run_options(event)
-
-  # summary = manager.create_demo_email_summary_json_soft_launch
-  # content = JSON.pretty_generate(summary)
-  # puts "Soft Launch: #{content}"
 
   r = manager.process_reports_using_now
 
@@ -64,7 +64,8 @@ def report_scheduling_lambda_handler(event:, context:)
 end
 
 def simulate_report_handler
-  report_scheduling_lambda_handler(event: {'try_send_summary_email' => 'try_send_summary_email'}, context: nil)
+  report_scheduling_lambda_handler(event: {}, context: nil)
+  #report_scheduling_lambda_handler(event: {'try_send_summary_email' => 'try_send_summary_email'}, context: nil)
 end
 
 # def self.create_from_lambda_input_event(event,env_in = ENV['ENV'], ses_client:)
