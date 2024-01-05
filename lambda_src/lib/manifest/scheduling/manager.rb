@@ -33,6 +33,10 @@ module Manifest
         self.new(env_in, control_table_name, ses_client_in:ses_client)
       end
 
+      def self.create_run_options(event)
+        RunOptions.new(event)
+      end
+
       def self.default_ses_client(region = DEFAULT_SES_REGION)
         # not sure if we should use this much
         Aws::SES::Client.new(region:region)
@@ -114,6 +118,12 @@ module Manifest
         data_hash = current_and_upcoming.joined_hash
       end
 
+      def send_demo_email_summary_soft_launch
+        demo = Manifest::Scheduling::DemoEmailJsonSummary.new(self)
+
+        demo.demo_email_json_summary
+      end
+
       private 
 
       def next_1030_pm_timestamp_pacific_time
@@ -130,6 +140,16 @@ module Manifest
         now_in_pacific_time = pacific_time_zone.utc_to_local(DateTime.now.new_offset(0))
       end
       #
+    end
+
+    class RunOptions
+      def initialize(raw_lambda_event)
+        @raw_lambda_event = raw_lambda_event
+      end
+
+      def try_send_summary_email?
+        @raw_lambda_event['try_send_summary_email'] == 'try_send_summary_email'
+      end
     end
   end
 end
