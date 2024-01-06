@@ -7,7 +7,7 @@ require_relative '../venues'
 module Report
 
   class Daily
-    SENDER =    'Ticketing<reports@ticketdriver.com>'
+    SENDER =    'Ticket Driver <reports@ticketdriver.com>'
     RECIPIENT = 'LVTickets@taogroup.com'
 
     def initialize

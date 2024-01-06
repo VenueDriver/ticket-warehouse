@@ -8,7 +8,7 @@ require_relative 'chrome_helper.rb'
 
 module Manifest
   class EmailReport
-    DEFAULT_SENDER = "Ticketing<reports@ticketdriver.com>"
+    DEFAULT_SENDER = "Ticket Driver <reports@ticketdriver.com>"
     DEFAULT_TO = ['richard.steinschneider@taogroup.com']
     TO_ALL = [
       'richard.steinschneider@taogroup.com',
