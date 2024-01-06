@@ -4,7 +4,7 @@ module ChromeHelper
   class << self
     attr_accessor :run_from_simulate
   end
-  self.run_from_simulate = true
+  self.run_from_simulate = !ENV['AWS_EXECUTION_ENV']
   
   def swift_shader_chrome_param
     if self.run_from_simulate
