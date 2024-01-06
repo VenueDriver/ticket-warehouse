@@ -56,7 +56,7 @@ module Manifest
 
         accounting_attempt_result = self.attempt_email do
           accounting_report = EmailReport.make_accounting(event_id )
-          accounting_report.send_ses_raw_email!(@ses_client, to_addresses: EmailReport::MARTECH_PLUS_STEPHANE )
+          accounting_report.send_ses_raw_email!(@ses_client, to_addresses: EmailReport::ACCOUNTING_PLUS_MARTECH )
         end
 
         if accounting_attempt_result.failed?

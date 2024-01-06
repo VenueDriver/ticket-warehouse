@@ -21,6 +21,8 @@ module Manifest
     MARTECH_PLUS_STEPHANE = MARTECH_TO + ['stephane.tousignant@taogroup.com']
     THIS_EMAIL_IS_HTML_ONLY = "This is html_only"
     ACCOUNT_PRODUCTION_DESTINATION = MARTECH_PLUS_STEPHANE
+    ACCOUNTING = [ 'TicketDriverRemitReports@taogroup.com' ]
+    ACCOUNTING_PLUS_MARTECH = ACCOUNTING + MARTECH_TO
 
     class << self
       def make_preliminary(event_id)
