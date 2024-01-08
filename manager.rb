@@ -5,6 +5,8 @@ require_relative 'lib/quicksight'
 require_relative 'lib/manager'
 require_relative 'lambda_src/lib/manifest/manifest.rb'
 
+$ses_client = Aws::SES::Client.new(region:'us-east-1')
+
 module Manager
   class CLI < Thor
 
@@ -51,6 +53,14 @@ module Manager
         run_options = Manifest::Scheduling::Manager.create_run_options(event)
 
         r = manager.process_reports_using_now
+    end
+
+    desc "send", "Send one Manifest report"
+    def send
+      event_id = '6551bc54-1c38-400e-8f8c-6f4792144192'
+      report_variant_in = 'final'
+
+      Manifest::Main.perform_report(event_id, report_variant_in, $ses_client)
     end
 
     desc "quickight", "Manage Quicksight resources."

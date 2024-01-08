@@ -4,6 +4,7 @@ require_relative 'erb_template.rb'
 require_relative 'mail_format.rb'
 require_relative 'report_variants.rb'
 require_relative 'surcharge_csv.rb'
+require_relative 'final_csv.rb'
 require_relative 'chrome_helper.rb'
 
 module Manifest
@@ -108,6 +109,10 @@ module Manifest
         message.attachments[csv_filename] = self.create_csv_string
       end
 
+      if @report_variant.has_final_csv?
+        message.attachments[csv_filename] = self.create_final_csv_string
+      end
+
       message
     end
 
@@ -118,6 +123,11 @@ module Manifest
     def create_csv_string
       surcharge_csv = SurchargeCsv.new(@output_structs_step)
       surcharge_csv.to_csv
+    end
+
+    def create_final_csv_string
+      final_csv = FinalCsv.new(@output_structs_step)
+      final_csv.to_csv
     end
 
     def on_tap(str)

@@ -40,6 +40,12 @@ module Manifest
       end
     end
 
+    module HasFinalCsvAttachment
+      def has_final_csv?
+        true
+      end
+    end
+
     module ExcludePdfAttachment
       def has_pdf?
         false
@@ -51,7 +57,13 @@ module Manifest
         false
       end
     end
-    
+
+    module ExcludeFinalCsvAttachment
+      def has_final_csv?
+        false
+      end
+    end
+
     class Base
       def preliminary?
         PRELIM == self.string_label
@@ -88,6 +100,10 @@ module Manifest
       def has_surcharge_csv?
         raise 'Not implemented'
       end
+
+      def has_final_csv?
+        raise 'Not implemented'
+      end
     end
     
     class Preliminary < Base
@@ -96,6 +112,7 @@ module Manifest
 
       include HasPdfAttachment
       include HasSurchargeCsvAttachment
+      include ExcludeFinalCsvAttachment
       
       def string_label; PRELIM ; end
     end
@@ -105,6 +122,7 @@ module Manifest
       include LabelFinal
 
       include HasPdfAttachment
+      include HasFinalCsvAttachment
       include ExcludeSurchargeCsvAttachment
       
       def string_label; FINAL ; end
@@ -116,6 +134,7 @@ module Manifest
 
       include ExcludePdfAttachment
       include HasSurchargeCsvAttachment
+      include ExcludeFinalCsvAttachment
       
       def string_label; ACCOUNTING ; end
     end
