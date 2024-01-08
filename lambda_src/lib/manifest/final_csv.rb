@@ -23,16 +23,6 @@ module Manifest
       }
     end
 
-    def to_csv
-        CSV.generate do |csv|
-          csv << self.header_row
-  
-          ticket_row_structs.each do |row_struct|
-            csv << self.convert_row_struct_to_csv_row(row_struct)
-          end
-        end
-      end  
-
     def convert_row_struct_to_csv_row(row_struct)
       [
         row_struct.venue,
@@ -50,6 +40,26 @@ module Manifest
 
         row_struct.sum_sales_tax,
         row_struct.sum_venue_fee,
+      ]
+    end
+
+    def totals_row
+      [
+        '', #'venue',
+        '', #'event',
+        '', #'event_date',
+
+        '', #'ticket',
+        '', #'price',
+        '', #'per_ticket_let',
+
+        @top_level_struct.total_sold,
+        @top_level_struct.total_bar_card,
+        @top_level_struct.total_face_value,
+        @top_level_struct.total_let,
+
+        @top_level_struct.total_sales_tax,
+        @top_level_struct.total_venue_fee,
       ]
     end
 
