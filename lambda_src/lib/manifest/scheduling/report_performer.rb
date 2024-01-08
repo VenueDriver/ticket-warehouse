@@ -68,9 +68,8 @@ module Manifest
         final_attempt_result = self.attempt_email do
           final_report = EmailReport.make_final(event_id)
           sender_and_destination_struct = @email_destination_planner.final(final_report)
-          to_addresses = EmailReport::MARTECH_PLUS_STEPHANE # Remove
-          # to_addresses = sender_and_destination_struct.to_addresses
-          # to_addresses << EmailReport::MARTECH_PLUS_STEPHANE
+          to_addresses = sender_and_destination_struct.to_addresses
+          to_addresses << EmailReport::MARTECH_PLUS_STEPHANE
           puts "To addresses: #{to_addresses}"
           final_report.send_ses_raw_email!(@ses_client, to_addresses: to_addresses )
         end
