@@ -127,8 +127,8 @@ export class TicketWarehouseStack extends cdk.Stack {
     const dailyGlueCrawlerRule = new events.Rule(this, `DailyGlueCrawlerTrigger-${stage}`, {
       schedule: events.Schedule.cron({ 
         minute: '0', 
-        hour: '0' 
-      })  // This will run at 12:00 AM daily
+        hour: '16' 
+      })  // This will run at 16:00 AM daily, which is about 8 AM, Pacific, dependng on DST.
     });
     
     dailyGlueCrawlerRule.addTarget(new targets.LambdaFunction(glueCrawlerLambda));
