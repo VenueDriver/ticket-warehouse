@@ -327,8 +327,8 @@ export class TicketWarehouseStack extends cdk.Stack {
     const dimStripeChargesCrawler = createCrawler(this, stage, vaultBucket.bucketName, 'dim_stripe_charges', 'vault_');
     const venuedriverTicketKindsCrawler = createCrawler(this, stage, vaultBucket.bucketName, 'venuedriver_ticket_kinds', 'vault_');
     const dimEventCrawler = createCrawler(this, stage, vaultBucket.bucketName, 'dim_event', 'vault_');
-    const dimEventCrawler = createCrawler(this, stage, vaultBucket.bucketName, 'dim_venues', 'vault_');
-    const dimEventCrawler = createCrawler(this, stage, vaultBucket.bucketName, 'dim_unique_humans', 'vault_');
+    const dimVenuesCrawler = createCrawler(this, stage, vaultBucket.bucketName, 'dim_venues', 'vault_');
+    const dimUniqueHumansCrawler = createCrawler(this, stage, vaultBucket.bucketName, 'dim_unique_humans', 'vault_');
     const manifestDeliveryControlsCrawler = createCrawler(this, stage, vaultBucket.bucketName, 'manifest_delivery_controls', 'vault_');
     const dimVdUsersCrawler = createCrawler(this, stage, vaultBucket.bucketName, 'dim_vd_users', 'vault_');
     const factActionsCrawler = createCrawler(this, stage, vaultBucket.bucketName, 'fact_actions', 'vault_');
