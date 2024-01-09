@@ -236,7 +236,7 @@ class TicketWarehouse
         "venue=#{match[:venue]}/year=#{match[:year]}/month=#{match[:month]}/day=#{match[:day]}"
       end
     # puts "Existing partitions: #{existing_athena_partitions}" if ENV['DEBUG']
-    puts "Partition: #{partition}" if ENV['DEBUG']
+    # puts "Partition: #{partition}" if ENV['DEBUG']
     # puts "Raw partition name: #{raw_partition_name}" if ENV['DEBUG']
     unless existing_athena_partitions.include?(raw_partition_name)
       puts "Creating Athena partition in all four tables: #{raw_partition_name}"
@@ -305,8 +305,8 @@ class TicketWarehouse
         (Time.now - 86400).strftime('%Y-%m-%d')
     when 'recent'
       start_after =
-        # Now minus 30 days.
-        (Time.now - 86400 * 30).strftime('%Y-%m-%d')
+        # Now minus 45 days.
+        (Time.now - 86400 * 45).strftime('%Y-%m-%d')
       start_before =
         # Now minus one day.
         (Time.now - 86400).strftime('%Y-%m-%d')
@@ -336,12 +336,16 @@ class TicketWarehouse
       @existing_athena_partitions = nil
     end
 
+    @athena.use_array_of_array_formatter!
+
     @existing_athena_partitions ||=
       # WARNING: We assume that the partitions are the same for all tables.
       @athena.start_query(query_string: <<-QUERY
           SHOW PARTITIONS #{@tables.first};
         QUERY
-      ) || []
+      ).flatten || []
+
+    @existing_athena_partitions
   end
 
   private
