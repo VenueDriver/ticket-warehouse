@@ -5,7 +5,7 @@ def lambda_handler(event:, context:)
   puts "Received event: #{JSON.pretty_generate(event)}"
 
   # Trigger the Glue crawlers to update the Athena tables.
-  glue_client = Aws::Glue::Client.new(region: 'us_east_1')
+  glue_client = Aws::Glue::Client.new(region: 'us-east-1')
   
   [
     'ticket_warehouse_events',
