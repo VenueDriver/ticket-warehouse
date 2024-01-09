@@ -110,7 +110,7 @@ export class TicketWarehouseStack extends cdk.Stack {
       }),
       handler: 'Glue-crawler-handler.lambda_handler',
       environment: {
-        'GLUE_CRAWLER_NAME': 'YOUR_GLUE_CRAWLER_NAME'
+        'ENV': stage
       },
       timeout: cdk.Duration.minutes(5),
       memorySize: 1024,
