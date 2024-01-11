@@ -70,8 +70,9 @@ module Report
           ON ticket.order_id = o."order".id
         WHERE
           LOWER(ticket.ticket_type_name) LIKE '%party pass%'
+          AND CAST(event.start AS TIMESTAMP) > CURRENT_TIMESTAMP
           AND CAST(event.start AS TIMESTAMP) <= CURRENT_TIMESTAMP + INTERVAL '60' DAY
-          AND event.organization_name IN ('#{Venues::LIST.join("', '")}')
+          AND event.organization_id IN ('#{Venues::IDLIST.join("', '")}')
         GROUP BY
           DATE_FORMAT(DATE_TRUNC('week', CAST(event.start AS TIMESTAMP)), '%Y-%m-%d'),
           ticket.ticket_type_name
@@ -82,7 +83,7 @@ module Report
       report = ''
 
       report << "Daily Ticket Sales Report\n"
-      report <<  "Generated on #{Time.now.strftime('%Y-%m-%d %H:%M:%S')}\n"
+      report << "Generated on #{Time.now.getlocal('-08:00').strftime('%Y-%m-%d %H:%M:%S')} PT\n"
     
       report <<  "\n"
       report <<  "Las Vegas Party Pass Summary by Week\n"
@@ -128,7 +129,7 @@ module Report
         WHERE
           LOWER(t.tickettype.name) NOT LIKE '%party pass%'
           AND CAST(e."event".start AS TIMESTAMP) BETWEEN CURRENT_TIMESTAMP AND CURRENT_TIMESTAMP + INTERVAL '60' DAY
-          AND event.organization_name IN ('#{Venues::LIST.join("', '")}')
+          AND event.organization_id IN ('#{Venues::IDLIST.join("', '")}')
         GROUP BY
           e."event".name,
           e."event".organization_name,
