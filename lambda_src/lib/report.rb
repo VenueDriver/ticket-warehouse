@@ -127,8 +127,7 @@ module Report
           "ticket_warehouse-production".ticket_warehouse_tickets t
           ON o."order".id = t.order_id
         WHERE
-          LOWER(t.tickettype.name) NOT LIKE '%party pass%'
-          AND CAST(e."event".start AS TIMESTAMP) BETWEEN CURRENT_TIMESTAMP AND CURRENT_TIMESTAMP + INTERVAL '60' DAY
+          CAST(e."event".start AS TIMESTAMP) BETWEEN CURRENT_TIMESTAMP AND CURRENT_TIMESTAMP + INTERVAL '60' DAY
           AND event.organization_id IN ('#{Venues::IDLIST.join("', '")}')
         GROUP BY
           e."event".name,
@@ -143,13 +142,6 @@ module Report
       SQL
       
       query_results = @athena_manager.start_query(query_string:query)
-      
-      report <<  "Daily Ticket Sales Report\n"
-      report <<  "Generated on #{Time.now.strftime('%Y-%m-%d %H:%M:%S')}\n"
-      
-      report <<  "\n"
-      report <<  "Las Vegas Party Pass Summary by Week\n"
-      report <<  "\n"
       
       # Process the query results
       
