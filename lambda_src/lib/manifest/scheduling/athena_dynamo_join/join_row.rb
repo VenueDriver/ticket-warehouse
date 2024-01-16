@@ -87,7 +87,9 @@ module Manifest
 
         def within_cutoff?(cutoff_timestamp_utc)
           event_start_utc = self.candidate_event_row.event_start_utc_timestamp_parsed
-          event_start_utc <= cutoff_timestamp_utc
+          # Add 6 minutes to the event start time before comparing to the cutoff
+          adjusted_event_start_utc = event_start_utc + Rational(6, 1440) # 6 minutes as a fraction of a day
+          adjusted_event_start_utc <= cutoff_timestamp_utc
         end
       end
 
