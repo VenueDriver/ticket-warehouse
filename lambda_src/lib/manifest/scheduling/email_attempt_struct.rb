@@ -35,6 +35,7 @@ module Manifest
             ses_raw_email_result = block_that_tries_to_email.call
             self.success(ses_raw_email_result)
           rescue StandardError => e
+            puts "ERROR: #{e.message}"
             # replace with "raise e" if you want to 
             # allow the exception to bubble up
             self.failure(e)           
