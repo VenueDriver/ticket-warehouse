@@ -13,7 +13,7 @@ module Report
     RECIPIENT = 'LVTickets@taogroup.com'
 
     def initialize
-      @to_addresses = ['Stephane.Tousignant@taogroup.com']
+      @to_addresses = [RECIPIENT]
       @cc_addresses = ['marketing.technology.developers@taogroup.com']
       @subject      = 'Daily Ticket Sales Report'
       @ses_client = Aws::SES::Client.new(region:'us-east-1')
@@ -41,7 +41,18 @@ module Report
       end
 
       # Step 2: Create the hash
-      data = Hash.new { |hash, key| hash[key] = Hash.new { |hash, key| hash[key] = Hash.new { |hash, key| hash[key] = { "Event Date" => nil, "Tickets" => [] } } } }
+      data = Hash.new do |week_hash, week_key|
+        week_hash[week_key] = Hash.new do |venue_hash, venue_key|
+          venue_hash[venue_key] = {
+            'Events' => Hash.new do |event_hash, event_key|
+              event_hash[event_key] = {
+                "Event Date" => nil,
+                "Tickets" => []
+              }
+            end
+          }
+        end
+      end
 
       # Step 3: Iterate over the Athena results
       regular_ticket_report_query_results.each do |row|
@@ -57,8 +68,18 @@ module Report
         }
 
         # Add the event date and ticket info to the hash
-        data[week_start][venue_name][event_title]["Event Date"] = event_date
-        data[week_start][venue_name][event_title]["Tickets"] << ticket_info
+        data[week_start][venue_name]['Events'][event_title]["Event Date"] = event_date
+        data[week_start][venue_name]['Events'][event_title]["Tickets"] << ticket_info
+        data[week_start][venue_name]['Events'][event_title]['quantity_sold'] =
+          (data[week_start][venue_name]['Events'][event_title]['quantity_sold'] || 0) + row['quantity_sold'].to_i
+        data[week_start][venue_name]['Events'][event_title]['sales_last_24_hours'] =
+          (data[week_start][venue_name]['Events'][event_title]['sales_last_24_hours'] || 0) + row['sales_last_24_hours'].to_i
+        
+        # Venue metadata.
+        data[week_start][venue_name]['quantity_sold'] =
+          (data[week_start][venue_name]['quantity_sold'] || 0) + row['quantity_sold'].to_i
+        data[week_start][venue_name]['sales_last_24_hours'] =
+          (data[week_start][venue_name]['sales_last_24_hours'] || 0) + row['sales_last_24_hours'].to_i
       end
 
       text_content =
@@ -196,31 +217,34 @@ module Report
 
     def generate_regular_ticket_report_text(data)
       report = ''
-      report <<  "\n"
-      report <<  "Regular Ticket Sales Report\n"
-      report <<  "\n"
+      report << "\n"
+      report << "Regular Ticket Sales Report\n"
+      report << "\n"
       
       data.each do |week_start, venues|
-        report <<  "Week of #{week_start} through #{week_start + 6}"
-        venues.each do |venue_name, events|
-          report <<  "\n"
-          report <<  "  Venue: #{venue_name}\n"
-          events.each do |event_title, event_info|
-            report <<  "\n"
-            report <<  "    Event Date:  #{event_info["Event Date"]}\n"
-            report <<  "    Event Title: #{event_title}\n"
-            event_info["Tickets"].each do |ticket|
-              report <<  "\n"
-              report <<  "      Ticket Type:       #{ticket["Ticket Type"]}\n"
-              report <<  "        Price:           #{ticket["Price"]}\n"
-              report <<  "          Total Sales:   #{ticket["Total Sales"]}\n"
-              report <<  "          Last 24 Hours: #{ticket["Last 24 Hours"]}\n"
+        report << "Week of #{week_start} through #{(week_start + 6).to_s}\n"
+        venues.each do |venue_name, venue_info|
+          report << "\n"
+          report << "  Venue: #{venue_name}\n"
+          report << "    Total Sales: #{venue_info['Total Sales']}\n"
+          report << "    Last 24 Hours Sales: #{venue_info['Last 24 Hours Sales']}\n"
+          venue_info['Events'].each do |event_title, event_info|
+            report << "\n"
+            report << "    Event Date:  #{event_info['Event Date']}\n"
+            report << "    Event Title: #{event_title}\n"
+            event_info['Tickets'].each do |ticket|
+              report << "\n"
+              report << "      Ticket Type:       #{ticket['Ticket Type']}\n"
+              report << "        Price:           #{ticket['Price']}\n"
+              report << "        Total Sales:     #{ticket['Total Sales']}\n"
+              report << "        Last 24 Hours:   #{ticket['Last 24 Hours']}\n"
             end
           end
+          report << "\n"
         end
-        report <<  "\n"
+        report << "\n"
       end
-
+    
       report
     end
 
