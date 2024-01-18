@@ -285,7 +285,7 @@
   <% data.each do |week_start, venues| %>
     <h2><%= week_start %></h2>
     <div class="panel">
-      <% venues.each do |venue_name, events| %>
+    <% venues.each do |venue_name, venue_info| %>
       <table>
         <tr class="top">
           <th width="100%"><h3><%= venue_name %></h3></th>
@@ -294,7 +294,7 @@
           <th class="number">Last 24H</th>
         </tr>
       
-        <% events.each do |event_title, event_info| %>
+        <% venue_info['Events'].each do |event_title, event_info| %>
           <tr class="event_header striped">
               
               <td colspan="2" width="100%">
@@ -302,8 +302,8 @@
                 <h5 class="h_inline h_no_v_margin"><%= event_title %></h5>
               </td>
               
-            <td class="number"><b></b></td>
-            <td class="number"><b></b></td>
+            <td class="number"><b><%= event_info['quantity_sold'] %></b></td>
+            <td class="number"><b><%= event_info['sales_last_24_hours'] %></b></td>
           </tr>
 
           <% event_info["Tickets"].each do |ticket| %>
@@ -320,8 +320,8 @@
       
         <tr class="bottom">
           <th colspan="2"></th>
-          <td class="number"><b></b></td>
-          <td class="number"><b></b></td>
+          <td class="number"><b><%= venue_info["quantity_sold"] %></b></td>
+          <td class="number"><b><%= venue_info["sales_last_24_hours"] %></b></td>
         </tr>
 
   
