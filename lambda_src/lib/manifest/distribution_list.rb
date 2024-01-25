@@ -6,7 +6,7 @@ module Manifest
         {
           "Liquid Pool Lounge"=>"VDNightlySalesLiquid@taogroup.com",
           "OMNIA"=>"VDNightlySalesOmnia@taogroup.com",
-          "LAVO Las Vegas"=>"VDNightlySalesLavoLV@taogroup.com",
+          "LAVO Italian Restaurant LV"=>"VDNightlySalesLavoLV@taogroup.com",
           "Wet Republic"=>"VDNightlySalesWetRepublic@taogroup.com",
           "Hakkasan Nightclub"=>"VDNightlySalesHakkasan@taogroup.com",
           "JEWEL Nightclub"=>"VDNightlySalesJewel@taogroup.com",
