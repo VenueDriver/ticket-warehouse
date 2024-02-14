@@ -9,7 +9,7 @@ module Manifest
       @athena_manager = AthenaManager.new(env_in)
       @athena_manager.use_array_of_hashes_formatter!
       @query_builder = DevQuery.new
-      @dynamo_writer = DynamoWriter.new # Initialize an instance of DynamoWriter
+      @dynamo_writer = Manifest::Scheduling::DynamoWriter.new # Initialize an instance of DynamoWriter
     end
 
     def fetch_data_from_athena(event_id)
