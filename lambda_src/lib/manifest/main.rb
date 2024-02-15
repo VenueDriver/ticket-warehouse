@@ -26,7 +26,7 @@ module Manifest
           to_addresses: ['Stephane.Tousignant@taogroup.com', 'marketing.technology.developers@taogroup.com'])
       end
 
-      def self.mark_as_preliminary_sent(event_id)
+      def mark_as_preliminary_sent(event_id)
         @dynamo_writer.mark_preliminary_sent(event_id)
       end
 
