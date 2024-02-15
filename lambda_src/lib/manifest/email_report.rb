@@ -60,7 +60,7 @@ module Manifest
       end
 
       if @ticket_rows_step.ticket_row_structs.empty?
-        Manifest::Main.fallback_mark_as_preliminary_sent(@event_id)
+        Manifest::Main.mark_as_preliminary_sent(@event_id)
         puts "Marked event #{@event_id} as preliminary sent due to empty ticket_row_structs."
         return # Exit the method early
       end
