@@ -6,6 +6,7 @@ require_relative 'report_variants.rb'
 require_relative 'surcharge_csv.rb'
 require_relative 'final_csv.rb'
 require_relative 'chrome_helper.rb'
+require_relative 'main.rb'
 
 module Manifest
   class EmailReport
@@ -53,6 +54,12 @@ module Manifest
       @from_athena_step = @event_data_fetcher.fetch_data_from_athena(@event_id)
 
       @ticket_rows_step = TicketRows.new(@from_athena_step, @report_variant)
+
+      if @ticket_rows_step.ticket_row_structs.empty?
+        Manifest::Main.mark_as_preliminary_sent(@event_id)
+        puts "Marked event #{@event_id} as preliminary sent due to empty ticket_row_structs."
+        return # Exit the method early
+      end
 
       @output_structs_step = @ticket_rows_step.output_struct
 
