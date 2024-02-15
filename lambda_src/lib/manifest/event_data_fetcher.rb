@@ -1,6 +1,6 @@
 require_relative '../../athena-manager.rb'
 require_relative 'dev_query.rb'
-require_relative 'scheduling/dynamo_helper.rb' # Import the DynamoWriter class
+require_relative 'scheduling/dynamo_writer.rb' # Import the DynamoWriter class
 
 module Manifest
   class EventDataFetcher
